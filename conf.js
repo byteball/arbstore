@@ -1,0 +1,55 @@
+/*jslint node: true */
+"use strict";
+exports.port = null;
+//exports.myUrl = 'wss://mydomain.com/bb';
+exports.bServeAsHub = false;
+exports.bLight = true;
+
+exports.storage = 'sqlite';
+
+// TOR is recommended.  If you don't run TOR, please comment the next two lines
+//exports.socksHost = '127.0.0.1';
+//exports.socksPort = 9050;
+
+exports.hub = process.env.testnet ? 'obyte.org/bb-test' : 'obyte.org/bb';
+exports.deviceName = 'ArbStore';
+exports.permanent_pairing_secret = '0000';
+exports.control_addresses = [''];
+exports.payout_address = 'WHERE THE MONEY CAN BE SENT TO';
+
+//exports.bIgnoreUnpairRequests = true;
+exports.bSingleAddress = false;
+exports.bStaticChangeAddress = true;
+exports.KEYS_FILENAME = 'keys.json';
+
+// smtp https://github.com/byteball/ocore/blob/master/mail.js
+exports.smtpTransport = 'local'; // use 'local' for Unix Sendmail
+exports.smtpRelay = '';
+exports.smtpUser = '';
+exports.smtpPassword = '';
+exports.smtpSsl = null;
+exports.smtpPort = null;
+
+// email setup
+exports.admin_email = 'admin@yandex.ru';
+exports.from_email = 'admin@yandex.ru';
+
+// ArbStoreWeb
+exports.ArbStoreWebPROTO = 'http';
+exports.ArbStoreWebDOMAIN = 'localhost';
+exports.ArbStoreWebPORT = 9003;
+exports.ArbStoreWebURI = `${exports.ArbStoreWebPROTO}://${exports.ArbStoreWebDOMAIN}:${exports.ArbStoreWebPORT}/`;
+exports.WebTokenSalt = 'changemeASAP';
+
+// Tags
+exports.available_tags = [
+	'IT',
+	'Insurance',
+	'Finance',
+	'Real estate'
+];
+
+// Deposit
+exports.min_deposit = 1000;
+
+exports.webPort = 8080;

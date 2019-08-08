@@ -1,0 +1,21 @@
+{
+  "name": "arbstore",
+  "version": "1.0.0",
+  "description": "Arbiter Store for Obyte",
+  "main": "arbstore.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "tony",
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^2.6.2",
+    "headless-obyte": "git+https://github.com/byteball/headless-obyte.git",
+    "koa": "^2.7.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-router": "^7.4.0",
+    "koa-views": "^6.2.0",
+    "lodash": "^4.17.15",
+    "ocore": "git+https://github.com/byteball/ocore.git"
+  }
+}

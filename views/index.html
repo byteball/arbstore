@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ArbStoreWeb</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- Inevitable thing -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+		<!-- multi-select plugin -->
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/css/select2.min.css" rel="stylesheet" />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js"></script>
+
+		<!-- UIkit CSS -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/css/uikit.min.css" />
+
+		<!-- UIkit JS -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+	</head>
+	<body>
+		<form class="uk-form-horizontal uk-margin-large uk-container uk-margin-top" method="POST">
+
+			<h2>Update Arbiter <%= name %></h2>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Visible</label>
+				<div class="uk-form-controls">
+					<input name="visible" class="uk-checkbox" type="checkbox" <%= visible ? 'checked' : '' %>>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Bio</label>
+				<div class="uk-form-controls">
+					<textarea name="bio" class="uk-textarea" rows="5" placeholder="Couple of lines about yourself..." required><%= info.bio %></textarea>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Contact info for moderators</label>
+				<div class="uk-form-controls">
+					<textarea name="contact_info" class="uk-textarea" rows="3" placeholder="Phone numbers, emails..." required><%= info.contact_info %></textarea>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Your specialization as an Arbiter</label>
+				<div class="uk-form-controls">
+					<% var i = 0;
+					available_tags.forEach(function(tag) { %>
+					<label><input class="uk-checkbox" name="tag-<%= i %>" type="checkbox" uk-toggle="target: .toggle<%= i %>; animation: uk-animation-slide-top" <%= info.tags[tag] ? 'checked' : '' %>> <%= tag %></label><br>
+					<div class="uk-section-muted uk-margin-bottom toggle<%= i %>" <%= info.tags[tag] ? '' : 'hidden' %>>
+						<input name="price-tag-<%= i %>" class="uk-input uk-form-blank" type="text" placeholder="service cost for <%= tag %> contracts, free-from text..." value="<%= info.tags[tag] %>">
+					</div>
+					<% i++;}); %>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Languages that you speak</label>
+				<div class="uk-form-controls">
+					<select class="languages" name="languages[]" multiple="multiple" required="required">
+					<% for (var code in available_languages) { 
+						var language = available_languages[code]; %>
+						<option value="<%= code %>" <%= info.languages.indexOf(code) !== -1 ? "selected" : "" %>><%= language.name %> – <%= language.nativeName %></option>
+					<% } %>
+					</select>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<button class="uk-button uk-button-primary" type="submit">Submit</button>
+				<span class="uk-label uk-label-danger"><%= error %></span>
+				<span class="uk-label uk-label-success"><%= success ? 'Saved' : '' %></span>
+			</div>
+		</form>
+	</body>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('.languages').select2();
+});
+</script>
+</html>
