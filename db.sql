@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS arbiters (
 	deposit_address CHAR(32) NOT NULL,
 	enabled TINYINT NOT NULL DEFAULT 1,
 	visible TINYINT NOT NULL DEFAULT 1,
-	info VARCHAR(4096) NULL,
+	info TEXT NULL,
 	announce_unit CHAR(44) NULL UNIQUE,
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address),
 	FOREIGN KEY (deposit_address) REFERENCES my_addresses(address)

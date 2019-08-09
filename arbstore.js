@@ -393,6 +393,7 @@ router.post('/:token', async ctx => {
 	if (!hash)
 		return ctx.body = `invalid token`;
 	let error;
+	let is_new_arbiter = true;
 	try {
 		let body = ctx.request.body;
 		if (!body.bio)
@@ -428,12 +429,16 @@ router.post('/:token', async ctx => {
 			"languages": languages
 		}
 		let current_arbiter = await arbiters.getByHash(hash);
+		
+		if (current_arbiter.info.bio)
+			is_new_arbiter = false; // just updating info, skjp following steps
+
 		Object.assign(current_arbiter.info, info);
 		arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, !!body.visible);
 	} catch (e) {
 		error = e;
 	} finally {
-		if (!error) {
+		if (!error && is_new_arbiter) {
 			checkDeposit(hash);
 		}
 		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
