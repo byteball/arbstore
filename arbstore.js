@@ -11,6 +11,7 @@ const fs = require('fs');
 const arbiters = require('./modules/arbiters.js');
 const device = require('ocore/device.js');
 const privateProfile = require('ocore/private_profile.js');
+const headlessWallet = require('headless-obyte');
 
 const Koa = require('koa');
 const app = new Koa();
@@ -19,11 +20,8 @@ const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const router = new KoaRouter();
 
-function moveFundsToAttestorAddresses(){
-	let network = require('ocore/network.js');
-	if (network.isCatchingUp())
-		return;
-	console.log('moveFundsToAttestorAddresses');
+async function withdrawDeposit(hash){
+	headlessWallet.sendAllBytesFromAddress()
 	db.query(
 		"SELECT DISTINCT receiving_address \n\
 		FROM receiving_addresses CROSS JOIN outputs ON receiving_address=address JOIN units USING(unit) \n\
@@ -53,7 +51,7 @@ function moveFundsToAttestorAddresses(){
 
 let available_languages = {};
 fs.readFile('languages.json', 'utf8', function(err, contents) {
-    available_languages = JSON.parse(contents);
+	available_languages = JSON.parse(contents);
 });
 
 function onReady() {
@@ -72,39 +70,42 @@ function onReady() {
 		})
 	}
 
-    eventBus.on('text', (from_address, text) => {
-    	let respond = (text) => {
-    		device.sendMessageToDevice(from_address, 'text', text);
-    	};
-    	let parser = (input, rules) => {
-	        for (let i = 0; i < rules.length; i++) {
-	        	let rule = rules[i];
-	        	if (rule.function) {
-	        		let match = rule.function(input);
-	        		if (match) {
-	        			rule.action(match);
-	        			return;
-	        		}
-	        		continue;
-	        	}
-	            let found = input.match(rule.pattern);
-	            if (found) {
-	            	rule.action(found);
-	            	return;
-	            }
-	            
-	        }
+	eventBus.on('text', (from_address, text) => {
+		let respond = (text) => {
+			device.sendMessageToDevice(from_address, 'text', text);
+		};
+		let parser = (input, rules) => {
+			for (let i = 0; i < rules.length; i++) {
+				let rule = rules[i];
+				if (rule.function) {
+					let match = rule.function(input);
+					if (match) {
+						rule.action(match);
+						return;
+					}
+					continue;
+				}
+				let found = input.match(rule.pattern);
+				if (found) {
+					rule.action(found);
+					return;
+				}
+				
+			}
 		}
-    	parser(text.trim(), [
-    		{function: validationUtils.isValidAddress, action: async () => {
-    			let address = text.trim();
-    			let rows = await getProfileHash(address);
+		parser(text.trim(), [
+			{function: validationUtils.isValidAddress, action: async () => {
+				let address = text.trim();
+				let rows = await getProfileHash(address);
 				if (!rows.length)
 					return respond(texts.not_attested());
 				respond(`Now we need to confirm that you are the owner of address ${address}. Please sign the following message: [s](sign-message-request:${texts.signMessage(address)})`);
-    		}},
-    		{pattern: /\(signed-message:(.+?)\)/, action: (arrSignedMessageMatches) => {
-    			let signedMessageBase64 = arrSignedMessageMatches[1];
+			}},
+			{pattern: /\(signed-message:(.+?)\)/, action: async (arrSignedMessageMatches) => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (current_arbiter && current_arbiter.announce_unit)
+					return respond(texts.already_announced());
+				let signedMessageBase64 = arrSignedMessageMatches[1];
 				var validation = require('ocore/validation.js');
 				var signedMessageJson = Buffer(signedMessageBase64, 'base64').toString('utf8');
 				try{
@@ -122,13 +123,10 @@ function onReady() {
 					let rows = await getProfileHash(address);
 					if (!rows.length)
 						return respond(texts.not_attested());
-					db.query(`SELECT DISTINCT address FROM attested_fields JOIN arbiters USING(address) WHERE field='profile_hash' AND value=?`, [rows[0]], async (rows) => {
-						if (rows.length > 1)
+					db.query(`SELECT DISTINCT address FROM attested_fields JOIN arbiters USING(address) WHERE field='profile_hash' AND value=? AND arbiters.address!=?`, [rows[0], address], async (rows) => {
+						if (rows.length > 0)
 							return respond(texts.already_registered_from_different_address());
-						let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 						if (current_arbiter) {
-							if (current_arbiter.announce_unit)
-								return respond(texts.already_registered_from_different_address());
 							arbiters.updateAddress(address, from_address);							
 						} else {
 							arbiters.create(address, from_address);
@@ -136,14 +134,14 @@ function onReady() {
 						return respond(texts.reveal_profile());
 					});
 				});
-    		}},
-    		{pattern: /\(profile:(.+?)\)|stay_anonymous/, action: async (arrProfileMatches) => {
-    			let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-    			if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-    			if (arrProfileMatches[1]) {
-	    			let privateProfileJsonBase64 = arrProfileMatches[1];
-	    			let objPrivateProfile = privateProfile.getPrivateProfileFromJsonBase64(privateProfileJsonBase64);
+			}},
+			{pattern: /\(profile:(.+?)\)|stay_anonymous/, action: async (arrProfileMatches) => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				if (arrProfileMatches[1]) {
+					let privateProfileJsonBase64 = arrProfileMatches[1];
+					let objPrivateProfile = privateProfile.getPrivateProfileFromJsonBase64(privateProfileJsonBase64);
 					if (!objPrivateProfile)
 						return respond('Invalid private profile');
 					privateProfile.parseAndValidatePrivateProfile(objPrivateProfile, (err, address, attestor_address) => {
@@ -160,12 +158,12 @@ function onReady() {
 					});
 				}
 				let token = respond(`Now complete your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`);
-    		}},
-    		{pattern: /^([\w\/+]+)@([\w.:\/-]+)#(.+)$/, action: async matches => {
-    			let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+			}},
+			{pattern: /^([\w\/+]+)@([\w.:\/-]+)#(.+)$/, action: async matches => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-    			var pubkey = matches[1];
+					return respond(texts.device_address_unknown());
+				var pubkey = matches[1];
 				var hub = matches[2];
 				var pairing_secret = matches[3];
 				if (pubkey.length !== 44)
@@ -173,51 +171,65 @@ function onReady() {
 				Object.assign(current_arbiter.info, {pairing_code: matches[0]});
 				arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, current_arbiter.visible);
 				postAnnounceUnit(current_arbiter.hash);
-    		}},
-		    {pattern: /^help$/, action: () => respond(texts.help())},
-		    {pattern: /^edit_info$/, action: async () => {
-		    	let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-		    	if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-		    	respond(`Edit your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`)
-		    }},
-		    {pattern: /^suspend$/, action: async () => {
-		    	let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-		    	if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-    			arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, false);
-		    	respond(`Your listing suspended`);
-		    }},
-		    {pattern: /^live$/, action: async () => {
-		    	let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-		    	if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-    			arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, true);
-		    	respond(`Your listing is now live`);
-		    }},
-		    {pattern: /^revive$/, action: async () => {
-		    	let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-		    	if (!current_arbiter)
-    				return respond(texts.device_address_unknown());
-    			postAnnounceUnit(current_arbiter.hash);
-		    }},
-		    {pattern: /.*/, action: () => respond(texts.greetings())}
+			}},
+			{pattern: /^help$/, action: () => respond(texts.help())},
+			{pattern: /^edit_info$/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				respond(`Edit your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`)
+			}},
+			{pattern: /^suspend$/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, false);
+				respond(`Your listing suspended`);
+			}},
+			{pattern: /^live$/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, true);
+				respond(`Your listing is now live`);
+			}},
+			{pattern: /^revive$/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				postAnnounceUnit(current_arbiter.hash);
+			}},
+			{pattern: /^withdraw$/, action: async () => {
+				let network = require('ocore/network.js');
+				if (network.isCatchingUp())
+					return respond(`Sync is in progress, try again later`);
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					return respond(texts.device_address_unknown());
+				try {
+					let res = await headlessWallet.sendAllBytesFromAddress(current_arbiter.deposit_address, current_arbiter.address, current_arbiter.device_address);
+					respond(texts.withdraw_completed(res.unit, current_arbiter.address));
+				} catch(e) {
+					respond(`${e}`);
+				}
+			}},
+			{pattern: /.*/, action: () => respond(texts.greetings())}
 		]);
 	});
 };
 
-async function requestDeposit(hash) {
+async function checkDeposit(hash) {
 	let arbiter = await arbiters.getByHash(hash);
 	let balance = await arbiters.getDepositBalance(hash);
 	if (balance < conf.min_deposit) {
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.topup_deposit(conf.min_deposit-balance, arbiter.deposit_address));
 	}
 	else {
-		requestPairingCode(hash);
+		checkPairingCode(hash);
 	}
 }
 
-async function requestPairingCode(hash) {
+async function checkPairingCode(hash) {
 	let arbiter = await arbiters.getByHash(hash);
 	if (arbiter.info.pairing_code)
 		return postAnnounceUnit(hash);
@@ -228,16 +240,12 @@ async function postAnnounceUnit(hash) {
 	let arbiter = await arbiters.getByHash(hash);
 	let balance = await arbiters.getDepositBalance(hash);
 	if (balance < conf.min_deposit)
-		return requestDeposit(hash);
+		return checkDeposit(hash);
 
 	let onError = (err) => {
 		device.sendMessageToDevice(arbiter.device_address, 'text', `Error: ${err}`);
 	};
-	let onDone = (unit) => {
-		db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [unit, arbiter.hash]);
-		device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(unit));
-	};
-
+	
 	if (arbiter.announce_unit) {
 		let rows = await db.query(`SELECT julianday('now') - julianday(creation_date) AS date_diff FROM units WHERE unit=?`, [arbiter.announce_unit]);
 		if (rows[0].date_diff < 1)
@@ -246,7 +254,6 @@ async function postAnnounceUnit(hash) {
 
 	const network = require('ocore/network.js');
 	const composer = require('ocore/composer.js');
-	const headlessWallet = require('headless-obyte');
 	const objectHash = require('ocore/object_hash.js');
 
 	let payload = {
@@ -258,8 +265,8 @@ async function postAnnounceUnit(hash) {
 		payload_hash: objectHash.getBase64Hash(payload),
 		payload: payload
 	};
-	headlessWallet.readFirstAddress(address => {
-		composer.composeJoint({
+	headlessWallet.readFirstAddress(async address => {
+		/*composer.composeJoint({
 			paying_addresses: [address],
 			outputs: [{address: address, amount: 0}],
 			messages: [objMessage],
@@ -272,7 +279,18 @@ async function postAnnounceUnit(hash) {
 					onDone(objJoint.unit.unit);
 				}
 			})
-		});
+		});*/
+		try {
+			let res = await headlessWallet.sendMultiPayment({
+				paying_addresses: [address],
+				messages: [objMessage],
+				change_address: address
+			});
+			db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [res.unit, arbiter.hash]);
+			device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(res.unit));
+		} catch(e) {
+			onError(`${e}`);
+		}
 	});
 
 	/*if (!arbiter.enabled && )
@@ -301,7 +319,9 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		WHERE unit IN(?) AND asset IS NULL
 		GROUP BY deposit_address`, [arrUnits]);
 	rows.forEach(async row => {
-		requestDeposit(row.hash);
+		let arbiter = await arbiters.getByHash(row.hash);
+		device.sendMessageToDevice(arbiter.device_address, 'text', texts.payment_confirmed());
+		checkDeposit(row.hash);
 	});
 });
 
@@ -414,7 +434,7 @@ router.post('/:token', async ctx => {
 		error = e;
 	} finally {
 		if (!error) {
-			requestDeposit(hash);
+			checkDeposit(hash);
 		}
 		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
 	}
