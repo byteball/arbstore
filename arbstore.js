@@ -20,34 +20,6 @@ const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const router = new KoaRouter();
 
-async function withdrawDeposit(hash){
-	headlessWallet.sendAllBytesFromAddress()
-	db.query(
-		"SELECT DISTINCT receiving_address \n\
-		FROM receiving_addresses CROSS JOIN outputs ON receiving_address=address JOIN units USING(unit) \n\
-		WHERE is_stable=1 AND is_spent=0 AND asset IS NULL AND receiving_address NOT IN(?) \n\
-		LIMIT ?",
-		[Object.values(realNameAttestation.assocAttestorAddresses), constants.MAX_AUTHORS_PER_UNIT],
-		rows => {
-			if (rows.length === 0)
-				return;
-			let arrAddresses = rows.map(row => row.receiving_address);
-			let headlessWallet = require('headless-obyte');
-			let timestampMod = Date.now()%3;
-			headlessWallet.sendMultiPayment({
-				asset: null,
-				to_address: realNameAttestation.assocAttestorAddresses[timestampMod === 2 ? 'jumio' : (timestampMod === 1 ? 'smartid' : 'nonus')],
-				send_all: true,
-				paying_addresses: arrAddresses
-			}, (err, unit) => {
-				if (err)
-					console.log("failed to move funds: "+err);
-				else
-					console.log("moved funds, unit "+unit);
-			});
-		}
-	);
-}
 
 let available_languages = {};
 fs.readFile('languages.json', 'utf8', function(err, contents) {
@@ -191,7 +163,7 @@ function onReady() {
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
 				arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, true);
-				respond(`Your listing is now live`);
+				respond(`You are visible again now`);
 			}},
 			{pattern: /^revive$/, action: async () => {
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
@@ -365,6 +337,9 @@ app.use(views(__dirname + '/views', {
 }));
 app.use(bodyParser());
 
+router.get('/thankyou.html', async ctx => {
+	await ctx.render('thankyou');
+});
 router.get('/:token', async ctx => {
 	let token = ctx.params['token'];
 	if (!token)
@@ -440,6 +415,7 @@ router.post('/:token', async ctx => {
 	} finally {
 		if (!error && is_new_arbiter) {
 			checkDeposit(hash);
+			return ctx.redirect(`/thankyou.html`);
 		}
 		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
 	}

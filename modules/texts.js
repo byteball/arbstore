@@ -1,7 +1,8 @@
 /*jslint node: true */
 'use strict';
 exports.greetings = () => {
-	return "Hello, send me your address.";
+	return `Hello, this bot can help you attest yourself as an arbiter.
+To start, send me your address. Address should be attested through Real Name Attestation bot.`;
 };
 
 exports.not_attested = () => {
@@ -38,7 +39,7 @@ exports.request_pairing_code = () => {
 }
 
 exports.unit_posted = (unit) => {
-	return `Your announcement unit was posted into DAG: https://explorer.obyte.org/#${unit}\nYou're are now set up.`
+	return `Your announcement unit was posted into DAG: https://explorer.obyte.org/#${unit}\nYou are now set up.`
 }
 
 exports.signMessage = (user_address) => {
@@ -54,7 +55,13 @@ exports.already_announced = () => {
 }
 
 exports.help = () => {
-	return "Help text";
+	return `Available commands:
+[help](command:help) - this text
+[edit_info](command:edit_info) - tdit your bio, specializations, other info (give me the web link!)
+[suspend](command:suspend) - shut down your listing from arbiters list
+[live](command:live) - resume your listing
+[withdraw](command:withdraw) - transfer all the funds from your deposit to your address, also stops the listing
+[revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)`;
 };
 
 //errors

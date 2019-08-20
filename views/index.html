@@ -17,6 +17,12 @@
 		<!-- UIkit JS -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+
+		<style type="text/css">
+			.saved {
+				border-radius: 5px;
+			}
+		</style>
 	</head>
 	<body>
 		<form class="uk-form-horizontal uk-margin-large uk-container uk-margin-top" method="POST">
@@ -72,7 +78,7 @@
 			<div class="uk-margin">
 				<button class="uk-button uk-button-primary" type="submit">Submit</button>
 				<span class="uk-label uk-label-danger"><%= error %></span>
-				<span class="uk-label uk-label-success"><%= success ? 'Saved' : '' %></span>
+				<span class="uk-label uk-label-success saved"><%= success ? 'saved!' : '' %></span>
 			</div>
 		</form>
 	</body>
