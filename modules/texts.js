@@ -1,5 +1,7 @@
 /*jslint node: true */
 'use strict';
+const conf = require('ocore/conf');
+
 exports.greetings = () => {
 	return `Hello, this bot can help you attest yourself as an arbiter.
 To start, send me your address. Address should be attested through Real Name Attestation bot.`;
@@ -56,12 +58,25 @@ exports.already_announced = () => {
 
 exports.help = () => {
 	return `Available commands:
+[status](command:status) – your current status
 [help](command:help) - this text
 [edit_info](command:edit_info) - tdit your bio, specializations, other info (give me the web link!)
 [suspend](command:suspend) - shut down your listing from arbiters list
 [live](command:live) - resume your listing
 [withdraw](command:withdraw) - transfer all the funds from your deposit to your address, also stops the listing
 [revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)`;
+};
+
+exports.current_status = (arbiter) => {
+	let text = 'For list of available commands, type [help](command:help)\n\n';
+	if (!arbiter.visible)
+		text += `You are currently invisible in arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n`;
+	text += `Your deposit balance is: ${arbiter.balance} bytes.\n`;
+	if (arbiter.balance < conf.min_deposit)
+		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add bytes, type [revive](command:revive)\n`;
+	if (!arbiter.enabled)
+		text += `You have been disabled by moderator. Contact the ArbStore to resolve it`;
+	return text;
 };
 
 //errors

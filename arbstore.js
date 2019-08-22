@@ -185,7 +185,15 @@ function onReady() {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /.*/, action: () => respond(texts.greetings())}
+			{pattern: /.*/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					respond(texts.greetings());
+				else {
+					current_arbiter.balance = await arbiters.getDepositBalance(current_arbiter.hash);
+					respond(texts.current_status(current_arbiter));
+				}
+			}}
 		]);
 	});
 };
