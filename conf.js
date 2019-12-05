@@ -35,10 +35,10 @@ exports.admin_email = 'admin@yandex.ru';
 exports.from_email = 'admin@yandex.ru';
 
 // ArbStoreWeb
-exports.ArbStoreWebPROTO = 'http';
-exports.ArbStoreWebDOMAIN = 'localhost';
-exports.ArbStoreWebPORT = 9003;
-exports.ArbStoreWebURI = `${exports.ArbStoreWebPROTO}://${exports.ArbStoreWebDOMAIN}:${exports.ArbStoreWebPORT}/`;
+exports.ArbStoreWebProto = 'http';
+exports.ArbStoreWebDomain = 'localhost';
+exports.ArbStoreWebPort = 9003;
+exports.ArbStoreWebURI = `${exports.ArbStoreWebProto}://${exports.ArbStoreWebDomain}:${exports.ArbStoreWebPort}/`;
 exports.WebTokenSalt = 'changemeASAP';
 
 // Tags
@@ -51,5 +51,3 @@ exports.available_tags = [
 
 // Deposit
 exports.min_deposit = 1000;
-
-exports.webPort = 8080;

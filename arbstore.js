@@ -277,6 +277,7 @@ async function postAnnounceUnit(hash) {
 		arbiters.setEnabled(hash, true);*/
 }
 
+// deposit topup
 eventBus.on('new_my_transactions', async arrUnits => {
 	let rows = await db.query(
 		`SELECT SUM(amount) as amount, hash
@@ -291,6 +292,7 @@ eventBus.on('new_my_transactions', async arrUnits => {
 	});
 });
 
+// deposit topup became stable
 eventBus.on('my_transactions_became_stable', async arrUnits => {
 	let rows = await db.query(
 		`SELECT hash
@@ -302,6 +304,47 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		let arbiter = await arbiters.getByHash(row.hash);
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.payment_confirmed());
 		checkDeposit(row.hash);
+	});
+});
+
+// snipe for arbiter contracts and calculate statistics
+eventBus.on('mci_became_stable', async mci => {
+	let rows = await db.query(
+		`SELECT unit, payload, definition
+		FROM units
+		JOIN messages USING(unit)
+		JOIN unit_authors USING(unit)
+		JOIN arbiters USING(address)
+		JOIN definitions USING(definition_chash)
+		WHERE main_chain_index=? AND payload LIKE '{"contract_text_hash"%"arbiter"%'`, [mci]);
+	rows.forEach(async row => {
+		let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
+		if (!contract_hash)
+			return;
+		let arbiter_address = row.payload.match(/"arbiter":"([^"]+)"/);
+		if (!arbiter_address)
+			return;
+		let arbiter = await arbiters.getByAddress(arbiter_address);
+		if (!arbiter)
+			return;
+		contracts.insertNew(hash, unit, arbiter, 'active');
+	});
+});
+
+// snipe for arbiter dispite response and calculate statistics
+eventBus.on('mci_became_stable', async mci => {
+	let rows = await db.query(
+		`SELECT unit, address, feed_name
+		FROM units
+		JOIN data_feeds USING(unit)
+		JOIN unit_authors USING(unit)
+		JOIN arbiters USING(address)
+		WHERE main_chain_index=? AND feed_name LIKE 'contract_%'`, [mci]);
+	rows.forEach(async row => {
+		let contract_hash = row.feed_name.match(/contract_(.+)/);
+		if (!contract_hash)
+			return;
+		await contracts.updateStatus(contract_hash, 'resolved');
 	});
 });
 
@@ -348,16 +391,31 @@ app.use(bodyParser());
 router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
 });
+router.get('/list', async ctx => {
+	let arbiter_list = await arbiters.getAllVisible();
+	await ctx.render('list', {arbiter_list: arbiter_list});
+});
+router.get('/arbiter/:hash', async ctx => {
+	let hash = ctx.params['hash'];
+	if (!hash)
+		ctx.throw(404);
+	let arbiter = await arbiters.getByHash(hash);
+	if (!arbiter)
+		ctx.throw(404, `hash not found`);
+	
+	arbiter.available_languages = available_languages;
+	await ctx.render('arbiter', arbiter);
+});
 router.get('/:token', async ctx => {
 	let token = ctx.params['token'];
 	if (!token)
-		return;
+		ctx.throw(404);
 	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
 	if (!hash)
-		return ctx.body = `invalid token`;
+		ctx.throw(404, `invalid token`);
 	let arbiter = await arbiters.getByHash(hash);
 	if (!arbiter)
-		return ctx.body = `hash not found`;
+		ctx.throw(404, `hash not found`);
 	
 	ctx.cookies.set('hash', arbiter.hash);
 
@@ -366,15 +424,15 @@ router.get('/:token', async ctx => {
 	arbiter.error = ctx.query.error;
 	arbiter.success = ctx.query.success;
 
-	await ctx.render('index', arbiter);
+	await ctx.render('edit_arbiter', arbiter);
 });
 router.post('/:token', async ctx => {
 	let token = ctx.params['token'];
 	if (!token)
-		return;
+		ctx.throw(404);
 	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
 	if (!hash)
-		return ctx.body = `invalid token`;
+		ctx.throw(404, `invalid token`);
 	let error;
 	let is_new_arbiter = true;
 	try {
@@ -431,7 +489,7 @@ router.post('/:token', async ctx => {
 });
 app.use(router.routes());
 
-app.listen(conf.ArbStoreWebPORT, () => console.log(`ArbStoreWeb listening on port ${conf.ArbStoreWebPORT}!`));
+app.listen(conf.ArbStoreWebPort, () => console.log(`ArbStoreWeb listening on port ${conf.ArbStoreWebPort}!`));
 eventBus.once('headless_wallet_ready', onReady);
 
 process.on('unhandledRejection', up => { throw up; });
