@@ -11,8 +11,17 @@ CREATE TABLE IF NOT EXISTS arbiters (
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address),
 	FOREIGN KEY (deposit_address) REFERENCES my_addresses(address)
 );
-
-CREATE TABLE IF NOT EXISTS contracts (
+-- query separator
+CREATE TABLE IF NOT EXISTS arbiter_contracts_arbstore (
+	hash CHAR(44) NOT NULL PRIMARY KEY,
+	unit CHAR(44) NULL UNIQUE,
+	arbiter_address CHAR(32) NOT NULL,
+	status TEXT CHECK (status IN('active', 'dispute', 'resolved')) NOT NULL DEFAULT 'active',
+	status_change_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (unit) REFERENCES units(unit)
+);
+-- query separator
+CREATE TABLE IF NOT EXISTS disputes (
 	hash CHAR(44) NOT NULL PRIMARY KEY,
 	unit CHAR(44) NULL UNIQUE,
 	arbiter_address CHAR(32) NOT NULL,

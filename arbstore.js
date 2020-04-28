@@ -9,6 +9,7 @@ const texts = require('./modules/texts.js');
 const validationUtils = require('ocore/validation_utils');
 const fs = require('fs');
 const arbiters = require('./modules/arbiters.js');
+const contracts = require('./modules/contracts.js');
 const device = require('ocore/device.js');
 const privateProfile = require('ocore/private_profile.js');
 const headlessWallet = require('headless-obyte');
@@ -310,11 +311,10 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 // snipe for arbiter contracts and calculate statistics
 eventBus.on('mci_became_stable', async mci => {
 	let rows = await db.query(
-		`SELECT unit, payload, definition
+		`SELECT unit, payload, unit_authors.address, definition
 		FROM units
 		JOIN messages USING(unit)
 		JOIN unit_authors USING(unit)
-		JOIN arbiters USING(address)
 		JOIN definitions USING(definition_chash)
 		WHERE main_chain_index=? AND payload LIKE '{"contract_text_hash"%"arbiter"%'`, [mci]);
 	rows.forEach(async row => {
@@ -327,11 +327,14 @@ eventBus.on('mci_became_stable', async mci => {
 		let arbiter = await arbiters.getByAddress(arbiter_address);
 		if (!arbiter)
 			return;
-		contracts.insertNew(hash, unit, arbiter, 'active');
+		let amount = row.definition.match(/"amount":(\d+)/);
+		if (!amount)
+			return;
+		contracts.insertNew(contract_hash, row.unit, row.address, arbiter, amount, 'active');
 	});
 });
 
-// snipe for arbiter dispite response and calculate statistics
+// snipe for arbiter dispute response and calculate statistics
 eventBus.on('mci_became_stable', async mci => {
 	let rows = await db.query(
 		`SELECT unit, address, feed_name
@@ -487,6 +490,33 @@ router.post('/:token', async ctx => {
 	}
 
 });
+
+router.get('/api/arbiter/:address', async ctx => {
+	let address = ctx.params['address'];
+	if (!address)
+		return ctx.throw(404);
+	let arbiter = await arbiters.getByAddress(address);
+	if (!arbiter)
+		return ctx.throw(404, `address not found`);
+	ctx.body = {real_name: arbiter.real_name, device_pub_key: arbiter.info.pairing_code.split('@')[0]};
+});
+
+router.post('/api/dispute/new', async ctx => {
+	let request = ctx.request.body;
+	if (!request.contract_hash || !request.arbiter_address || !request.my_address || !request.peer_address || typeof request.me_is_payer === "undefined" || !request.my_pairing_code || !request.peer_pairing_code || !request.encrypted_contract)
+		return ctx.throw(404, `not all fields present`);
+	let contract = await contracts.get(request.contract_hash);
+	if (!contract)
+		return ctx.throw(404, `hash not found`);
+	let contractContent = device.decryptPackage(request.encrypted_contract);
+	if (!contractContent || !contractContent.creation_date || !contractContent.title || !contractContent.text)
+		return ctx.throw(404, `not all contract fields present or wrong key used for encryption`);
+	balances.readBalance(contract.shared_address, function(assocBalances){
+		//if (assocBalances['base']['stable'] < contract.amount)
+	});
+	ctx.body = contract;
+});
+
 app.use(router.routes());
 
 app.listen(conf.ArbStoreWebPort, () => console.log(`ArbStoreWeb listening on port ${conf.ArbStoreWebPort}!`));
