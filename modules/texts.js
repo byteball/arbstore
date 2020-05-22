@@ -56,6 +56,19 @@ exports.already_announced = () => {
 	return `You were already announced as arbiter, no need to sign message again`;
 }
 
+exports.serviceFeeSet = (hash, amount) => {
+	return `Your fee for resolving dispute on contract ${hash} is set to ${amount} bytes. Payment request is sent to plaintiff. We will notify you when payment is received.`;
+}
+
+exports.payForArbiterService = (amount, address) => {
+	return `Arbbiter is asking ${amount} bytes for his service of resolving a dispute. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+}
+
+exports.service_fee_paid = (hash, amount) => {
+	return `We received a payment from plaintiff of total ${amount} bytes for contract ${hash}. Post your dispute resolution in the form of data feed with the name 'CONTRACT_${hash}' and value of winning side address`;
+}
+
+
 exports.help = () => {
 	return `Available commands:
 [status](command:status) – your current status
