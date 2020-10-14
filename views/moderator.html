@@ -24,34 +24,30 @@
 			}
 		</style>
 	</head>
-	<body class="uk-margin-large uk-container uk-margin-top">
-		<h2>Arbiter <%= real_name %></h2>
-		<h4>Chat name - <%= device_name %></h4>
-		<ul>
-			<li> Service fees by contract type:
-				<ul><% for (let [tag, value] of Object.entries(info.tags)) { %>
-					<li><%= tag %>: <b><%= value %></b></li>
-					<% } %>
-				</ul>
-			</li>
-			<li> Languages:
-				<ul><% for (let code of info.languages) { 
-					var language = available_languages[code]; %>
-					<li><%= language.name %> – <%= language.nativeName %></li>
-					<% } %>
-				</ul>
-			</li>
-			<li>Address: <b><%= address %></b></li>
-			<li>Registered: <b><%= creation_date %></b></li>
-			<li>Bio: <b><%= info.bio %></b></li>
-			<li>Contracts resolved: <b><%= resolved_cnt %></b></li>
-			<li>Last activity: <b><%= last_unit_date %></b></li>
-
+	<body>
+		<ul class="uk-subnav uk-subnav-pill tags" uk-margin>
 		</ul>
+		<table class="uk-table uk-table-justify uk-table-divider uk-container">
+			<thead>
+				<tr>
+					<th class="uk-width-small">hash</th>
+					<th>Title</th>
+					<th>Arbiter address</th>
+					<th>Winner</th>
+					<th>appeal date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% contracts.forEach(function(contract) { %>
+					<tr data-hash="<%= contract.hash %>" onclick="window.location='/moderator/<%= encodeURIComponent(contract.hash) %>';">
+						<td><%= contract.hash %></td>
+						<td><%= contract.contract.title %></td>
+						<td><%= contract.arbiter_address %></td>
+						<td><%= contract.winner %></td>
+						<td><%= contract.status_change_date %></td>
+					</tr>
+				<% }); %>
+			</tbody>
+		</table>
 	</body>
-<script type="text/javascript">
-$(document).ready(function() {
-	$('.languages').select2();
-});
-</script>
 </html>

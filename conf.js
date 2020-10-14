@@ -3,7 +3,7 @@
 exports.port = null;
 //exports.myUrl = 'wss://mydomain.com/bb';
 exports.bServeAsHub = false;
-exports.bLight = true;
+exports.bLight = false;
 
 exports.storage = 'sqlite';
 
@@ -21,6 +21,7 @@ exports.payout_address = 'WHERE THE MONEY CAN BE SENT TO';
 exports.bSingleAddress = false;
 exports.bStaticChangeAddress = true;
 exports.KEYS_FILENAME = 'keys.json';
+exports.logToSTDOUT = true;
 
 // smtp https://github.com/byteball/ocore/blob/master/mail.js
 exports.smtpTransport = 'local'; // use 'local' for Unix Sendmail
@@ -40,6 +41,9 @@ exports.ArbStoreWebDomain = 'localhost';
 exports.ArbStoreWebPort = 9003;
 exports.ArbStoreWebURI = `${exports.ArbStoreWebProto}://${exports.ArbStoreWebDomain}:${exports.ArbStoreWebPort}/`;
 exports.WebTokenSalt = 'changemeASAP';
+exports.ModeratorDeviceAddress = '0ODU2GTXH4GAHVSIWKVJM6WC5RKFT36NF';
+exports.AppealFeeAmount = 10000;
+exports.min_deposit = 3*exports.AppealFeeAmount + 10000; // usually ~3xAppealFeeAmount
 
 // Tags
 exports.available_tags = [
@@ -49,5 +53,3 @@ exports.available_tags = [
 	'Real estate'
 ];
 
-// Deposit
-exports.min_deposit = 1000;

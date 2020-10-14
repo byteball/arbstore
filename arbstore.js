@@ -13,6 +13,9 @@ const contracts = require('./modules/contracts.js');
 const device = require('ocore/device.js');
 const privateProfile = require('ocore/private_profile.js');
 const headlessWallet = require('headless-obyte');
+const network = require('ocore/network.js');
+const storage = require('ocore/storage.js');
+const objectHash = require('ocore/object_hash.js');
 
 const Koa = require('koa');
 const app = new Koa();
@@ -20,6 +23,7 @@ const views = require('koa-views');
 const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const router = new KoaRouter();
+const moderatorRouter = new KoaRouter();
 
 
 let available_languages = {};
@@ -28,9 +32,11 @@ fs.readFile('languages.json', 'utf8', function(err, contents) {
 });
 
 function onReady() {
+	//network.start();
 
 	let last_plaintiff_device_address = null;
 	eventBus.on('paired', from_address => {
+		lastPairedAddress = from_address;
 		if (last_plaintiff_device_address === from_address) {
 			last_plaintiff_device_address = null;
 			return;
@@ -46,7 +52,7 @@ function onReady() {
 		return new Promise(resolve => {
 			db.query(
 				`SELECT value FROM attested_fields WHERE address=? AND field='profile_hash'`, [address], resolve);
-		})
+		});
 	}
 
 	eventBus.on('text', (from_address, text) => {
@@ -71,7 +77,7 @@ function onReady() {
 				}
 				
 			}
-		}
+		};
 		parser(text.trim(), [
 			{function: validationUtils.isValidAddress, action: async () => {
 				let address = text.trim();
@@ -138,7 +144,7 @@ function onReady() {
 				}
 				let token = respond(`Now complete your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`);
 			}},
-			{pattern: /^([\w\/+]+)@([\w.:\/-]+)#(.+)$/, action: async matches => {
+			{pattern: /^([\w\/+]+)@([\w.:\/-]+)#(.+)$/, action: async matches => { // pairing code
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
@@ -179,7 +185,6 @@ function onReady() {
 				postAnnounceUnit(current_arbiter.hash);
 			}},
 			{pattern: /^withdraw$/, action: async () => {
-				let network = require('ocore/network.js');
 				if (network.isCatchingUp())
 					return respond(`Sync is in progress, try again later`);
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
@@ -192,7 +197,7 @@ function onReady() {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /^(.{44})\s([\d]+)$/, action: async matches => {
+			{pattern: /^(.{44})\s([\d]+)$/, action: async matches => { // service fee
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
@@ -221,7 +226,7 @@ function onReady() {
 							ifOk: () => {
 								headlessWallet.issueNextMainAddress(async address => {
 									await contracts.updateField("service_fee_address", contract.hash, address);
-									respond(texts.payForArbiterService(amount, address));
+									device.sendMessageToDevice(device_address, 'text', texts.payForArbiterService(amount, address));
 								});
 							},
 							ifError: respond
@@ -278,7 +283,6 @@ async function postAnnounceUnit(hash) {
 			return onError(`You can only announce yourself once per day`);
 	}
 
-	const network = require('ocore/network.js');
 	const composer = require('ocore/composer.js');
 	const objectHash = require('ocore/object_hash.js');
 
@@ -370,9 +374,25 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 	});
 });
 
+// appeal fee paid
+eventBus.on('my_transactions_became_stable', async arrUnits => {
+	let rows = await db.query(
+		`SELECT hash, SUM(outputs.amount) AS amount
+		FROM outputs
+		CROSS JOIN arbiter_contracts_arbstore AS arb_c ON outputs.address=arb_c.appeal_fee_address
+		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
+		GROUP BY appeal_fee_address`, [arrUnits]);
+	rows.forEach(async row => {
+		let contract = await contracts.get(row.hash);
+		if (contract.status !== "appeal_requested" || row.amount < conf.AppealFeeAmount) return;
+		await contracts.updateStatus(contract.hash, "in_appeal");
+	 	device.sendMessageToDevice(conf.ModeratorDeviceAddress, 'text', texts.appeal_fee_paid(contract.hash, contract.contract.title));
+	});
+});
+
 // snipe for arbiter contracts and calculate statistics
 function extractContractFromUnit(unit) {
-	return new Promise(async resolve => {
+	return new Promise(async (resolve, reject) => {
 		let rows = await db.query(
 			`SELECT unit, payload, unit_authors.address AS shared_address, definition
 			FROM messages
@@ -382,45 +402,67 @@ function extractContractFromUnit(unit) {
 		rows.forEach(async row => {
 			let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
 			if (!contract_hash)
-				return;
+				return reject("no contract hash in the unit");
 			let arbiter_address = row.payload.match(/"arbiter":"([^"]+)"/);
 			if (!arbiter_address)
-				return;
+				return reject("no arbiter_address in the unit");
 			let arbiter = await arbiters.getByAddress(arbiter_address[1]);
 			if (!arbiter)
-				return;
+				return reject("arbiter is now known to this arbstore");
 			let amount = row.definition.match(/"amount":(\d+)/);
 			if (!amount)
-				return;
+				return reject("no amount in the unit");
+			let definitionObj = JSON.parse(row.definition);
+			let side1_address = _.get(definitionObj, '[1][0][1][0][1]');
+			let side2_address = _.get(definitionObj, '[1][0][1][1][1]');
+			if (!side1_address || !side2_address)
+				return reject("can't find side addresses in the unit");
 			let asset = row.definition.match(/"asset":"([^"]+)"/);
 			if (!asset)
-				return;
+				return reject("no asset in the unit");
 			if (asset[1] === "base")
 				asset[1] = null;
-			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount[1], asset[1], 'active');
+			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount[1], asset[1], 'active', side1_address, side2_address);
 			resolve(await contracts.get(contract_hash[1]));
 		});
+		if (rows.length === 0) {
+			return reject("unit either not known to arbstore yet or does not contain any arbiter contract info");
+		}
 	});
 }
 eventBus.on('saved_unit', objJoint => {
-	extractContractFromUnit(objJoint.unit.unit);
+	extractContractFromUnit(objJoint.unit.unit).catch(e => {});
 });
 
 
 // snipe for arbiter dispute response and calculate statistics
 eventBus.on('mci_became_stable', async mci => {
 	let rows = await db.query(
-		`SELECT unit, address, feed_name
+		`SELECT unit, address
 		FROM units
-		JOIN data_feeds USING(unit)
 		JOIN unit_authors USING(unit)
 		JOIN arbiters USING(address)
-		WHERE main_chain_index=? AND feed_name LIKE 'contract_%'`, [mci]);
+		WHERE main_chain_index=?`, [mci]);
 	rows.forEach(async row => {
-		let contract_hash = row.feed_name.match(/contract_(.+)/);
-		if (!contract_hash)
-			return;
-		await contracts.updateStatus(contract_hash, 'resolved');
+		let unit = await storage.readUnit(row.unit);
+		unit.messages.forEach(async m => {
+			if (m.app !== "data_feed")
+				return;
+			for (let key in m.payload) {
+				let contract_hash_matches = key.match(/CONTRACT_(.+)/);
+				if (!contract_hash_matches)
+					continue;
+				let contract_hash = contract_hash_matches[1];
+				let contract = await contracts.get(contract_hash);
+				if (!contract)
+					continue;
+				if (contract.status === 'in_dispute') {
+					await contracts.updateStatus(contract_hash, 'dispute_resolved');
+				}
+				let winner_address = m.payload[key];
+				await contracts.updateField("winner", contract_hash, winner_address);
+			}
+		});
 	});
 });
 
@@ -471,6 +513,90 @@ router.get('/list', async ctx => {
 	let arbiter_list = await arbiters.getAllVisible();
 	await ctx.render('list', {arbiter_list: arbiter_list});
 });
+let lastPairedAddress = '';
+moderatorRouter.get('/checklogin', async ctx => {
+	if (lastPairedAddress != conf.ModeratorDeviceAddress)
+		return ctx.body='false';
+	ctx.cookies.set('address', encrypt(conf.ModeratorDeviceAddress));
+	ctx.redirect('/moderator');
+});
+moderatorRouter.get('/pair', async ctx => {
+	async function waitForPairing() {
+		return new Promise(resolve => device.startWaitingForPairing(resolve));
+	};
+	let pi = await waitForPairing();
+	await ctx.render('login', {pairing_code: `${pi.device_pubkey}@${pi.hub}#${pi.pairing_secret}`});
+});
+function checkLogin(ctx) {
+	let address = decrypt(ctx.cookies.get('address'));
+	if (!address || address != conf.ModeratorDeviceAddress)
+		ctx.redirect('/moderator/pair');
+};
+moderatorRouter.get('/', async ctx => {
+	checkLogin(ctx);
+	let rows = await contracts.getAllByStatus('in_appeal');
+	await ctx.render('moderator', {contracts: rows});
+});
+moderatorRouter.get('/:hash', async ctx => {
+	checkLogin(ctx);
+	let hash = ctx.params['hash'];
+	if (!hash)
+		ctx.throw(404, 'no contract hash');
+	hash = decodeURIComponent(hash);
+	let contract = await contracts.get(hash);
+	if (!contract)
+		ctx.throw(404, `hash not found`);
+	contract.arbiter = await arbiters.getByAddress(contract.arbiter_address);
+	await ctx.render('moderator_contract', contract);
+});
+moderatorRouter.post('/:hash', async ctx => {
+	checkLogin(ctx);
+	let hash = ctx.params['hash'];
+	if (!hash)
+		ctx.throw(404, 'no contract hash');
+	hash = decodeURIComponent(hash);
+	let contract = await contracts.get(hash);
+	if (!contract)
+		ctx.throw(404, `hash not found`);
+	if (contract.status !== 'in_appeal')
+		ctx.throw(404, `contract is not in appeal process`);
+	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
+
+	let action = ctx.query['action'];
+	if (!action)
+		ctx.throw(404, `action not found`);
+	
+	if (action === 'fulfill') {
+		let loser = contract.side1_address === contract.winner ? contract.side2_address : contract.side1_address;
+
+		try {
+			let res = await headlessWallet.sendMultiPayment({
+				paying_addresses: [arbiter.deposit_address],
+				to_address: loser,
+				amount: 3*conf.AppealFeeAmount,
+				change_address: arbiter.deposit_address
+			});
+			device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_resolved_arbiter(contract.hash, contract.contract.title));
+			ctx.body = 'ok';
+		} catch(e) {
+			ctx.throw(403, `{"error": "${e}"}`);
+		}
+	}
+	await contracts.updateStatus(contract.hash, "appeal_resolved");
+	let plaintiff_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
+	let peer_device_address = objectHash.getDeviceAddress(contract.peer_pairing_code.split('@')[0]);
+	device.readCorrespondentsByDeviceAddresses([plaintiff_device_address, peer_device_address], rows => {
+		rows.forEach(row => {
+			device.sendMessageToDevice(row.device_address, "text", texts.appeal_resolved(contract.hash, contract.contract.title));
+		});
+	});
+
+	contract = await contracts.get(hash); // re-request updated contract from DB
+	contract.arbiter = arbiter;
+
+	await ctx.render('moderator_contract', contract);
+});
+router.use('/moderator', moderatorRouter.routes());
 router.get('/arbiter/:hash', async ctx => {
 	let hash = ctx.params['hash'];
 	if (!hash)
@@ -580,22 +706,74 @@ router.post('/api/dispute/new', async ctx => {
 		return ctx.throw(404, `{"error": "not all fields present"}`);
 	let contract = await contracts.get(request.contract_hash);
 	if (!contract) { // no sniped contract were created, probably because arbbiter was on another arbsotre atm of contract creation
-		contract = await extractContractFromUnit(request.unit);
+		contract = await extractContractFromUnit(request.unit).catch((err) => {ctx.throw(404, `{"error": "${err}"}`);});
 		if (!contract)
 			return ctx.throw(404, `{"error": "hash not found"}`);
+	}
+	if (!((request.my_address === contract.side1_address && request.peer_address === contract.side2_address) ||
+		  (request.my_address === contract.side2_address && request.peer_address === contract.side1_address)) ) {
+		return ctx.throw(404, `{"error": "addresses do not match definition"}`);
 	}
 	if (contract.status != "active")
 		return ctx.throw(404, `{"error": "contract was in dispute already"}`);
 	let balances = await contracts.queryBalance(contract.hash);
 	if (balances[contract.asset] < contract.amount)
-		return ctx.throw(200, JSON.stringify({error: '{"error": "no enough balance on the contract"}'}));
+		return ctx.throw(200, JSON.stringify({error: '{"error": "not enough balance on the contract"}'}));
 	request.amount = contract.amount;
 	request.asset = contract.asset;
 	request.arbiter_address = contract.arbiter_address;
 	await contracts.updateStatus(contract.hash, "dispute_requested");
 	await contracts.updateField("plaintiff_pairing_code", contract.hash, request.my_pairing_code);
+	await contracts.updateField("peer_pairing_code", contract.hash, request.peer_pairing_code);
 	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 	device.sendMessageToDevice(arbiter.device_address, "arbiter_dispute_request", request);
+	
+	ctx.body = `"ok"`;
+});
+
+router.post('/api/appeal/new', async ctx => {
+	let request = ctx.request.body;
+	if (!request.contract_hash || !request.my_pairing_code || !request.my_address || !request.contract || !request.contract.title || !request.contract.text)
+		return ctx.throw(404, `{"error": "not all fields present"}`);
+	let contract = await contracts.get(request.contract_hash);
+	if (!contract) {
+		if (!contract)
+			return ctx.throw(404, `{"error": "hash not found"}`);
+	}
+	if (contract.status != "dispute_resolved")
+		return ctx.throw(404, `{"error": "contract wasn't in dispute"}`);
+	await contracts.updateStatus(contract.hash, "appeal_requested");
+	await contracts.updateField("contract", contract.hash, JSON.stringify(request.contract));
+
+	if (request.my_pairing_code !== contract.plaintiff_pairing_code && request.my_pairing_code !== contract.peer_pairing_code)
+		return ctx.throw(404, `{"error": "wrong pairing code"}`);
+
+	var matches = request.my_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
+	if (!matches)
+		return ctx.throw(404, `{"error": "invalid pairing code"}`);
+	var pubkey = matches[1];
+	var hub = matches[2];
+	var pairing_secret = matches[3];
+	if (pubkey.length !== 44)
+		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
+	device.addUnconfirmedCorrespondent(pubkey, hub, 'New', function(device_address){
+		device.startWaitingForPairing(function(reversePairingInfo){
+			device.sendPairingMessage(hub, pubkey, pairing_secret, reversePairingInfo.pairing_secret, {
+				ifOk: () => {
+					headlessWallet.issueNextMainAddress(async address => {
+						await contracts.updateField("appeal_fee_address", contract.hash, address);
+						device.sendMessageToDevice(device_address, 'text', texts.payAppealFee(conf.AppealFeeAmount, address));
+					});
+				},
+				ifError: (err) => {
+					ctx.throw(404, `{"error": "${err}"}`);
+				}
+			});
+		});
+	});
+
+	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
+	device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_started(request.contract.title));
 	
 	ctx.body = `"ok"`;
 });
@@ -605,4 +783,6 @@ app.use(router.routes());
 app.listen(conf.ArbStoreWebPort, () => console.log(`ArbStoreWeb listening on port ${conf.ArbStoreWebPort}!`));
 eventBus.once('headless_wallet_ready', onReady);
 
-process.on('unhandledRejection', up => { throw up; });
+process.on('unhandledRejection', (reason, promise) => { console.error('unhandled rejection in: ', promise); throw reason; });
+
+//network.requestHistoryFor([], ['WURFMG2AXWFMIKV4HOPRG3KQ4VYWRRYA'], function(){});

@@ -19,11 +19,17 @@ CREATE TABLE IF NOT EXISTS arbiter_contracts_arbstore (
 	arbiter_address CHAR(32) NOT NULL,
 	amount BIGINT NOT NULL,
 	asset CHAR(44) NULL,
-	status TEXT CHECK (status IN('active', 'dispute_requested', 'in_dispute', 'resolved')) NOT NULL DEFAULT 'active',
+	status TEXT CHECK (status IN('active', 'dispute_requested', 'in_dispute', 'dispute_resolved', 'appeal_requested', 'in_appeal', 'appeal_resolved')) NOT NULL DEFAULT 'active',
 	status_change_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	service_fee INT NULL,
 	service_fee_address CHAR(32) NULL,
+	appeal_fee_address CHAR(32) NULL,
+	side1_address CHAR(32) NULL,
+	side2_address CHAR(32) NULL,
 	plaintiff_pairing_code VARCHAR(200) NULL,
+	peer_pairing_code VARCHAR(200) NULL,
+	contract VARCHAR(40000) NULL,
+	winner CHAR(32) NULL,
 	FOREIGN KEY (arbiter_address) REFERENCES arbiters(address),
 	FOREIGN KEY (unit) REFERENCES units(unit)
 );

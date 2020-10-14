@@ -17,41 +17,28 @@
 		<!-- UIkit JS -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
-
-		<style type="text/css">
-			.saved {
-				border-radius: 5px;
-			}
-		</style>
 	</head>
-	<body class="uk-margin-large uk-container uk-margin-top">
-		<h2>Arbiter <%= real_name %></h2>
-		<h4>Chat name - <%= device_name %></h4>
-		<ul>
-			<li> Service fees by contract type:
-				<ul><% for (let [tag, value] of Object.entries(info.tags)) { %>
-					<li><%= tag %>: <b><%= value %></b></li>
-					<% } %>
-				</ul>
-			</li>
-			<li> Languages:
-				<ul><% for (let code of info.languages) { 
-					var language = available_languages[code]; %>
-					<li><%= language.name %> – <%= language.nativeName %></li>
-					<% } %>
-				</ul>
-			</li>
-			<li>Address: <b><%= address %></b></li>
-			<li>Registered: <b><%= creation_date %></b></li>
-			<li>Bio: <b><%= info.bio %></b></li>
-			<li>Contracts resolved: <b><%= resolved_cnt %></b></li>
-			<li>Last activity: <b><%= last_unit_date %></b></li>
-
-		</ul>
+	<body>
+		<div class="uk-section uk-section-primary uk-light">
+			<div class="uk-container">
+				<article class="uk-article">
+					<h1 class="uk-article-title">Moderator Login</h1>
+				</article>
+			</div>
+		</div>
+		<div class="uk-card uk-card-body">
+			<p>Please pair with the wallet you setup in your ArbStore config under <code>ModeratorDeviceAddress</code> variable.</p>
+			<o>Pairing code: <a href="obyte:<%= pairing_code %>"><%= pairing_code %></a></o>
+		</div>
 	</body>
 <script type="text/javascript">
 $(document).ready(function() {
-	$('.languages').select2();
+	setInterval(function() {
+		$.get('/moderator/checklogin', function(data){
+			if (data != 'false')
+				window.location.href = '/moderator';
+		});
+	}, 500);
 });
 </script>
 </html>

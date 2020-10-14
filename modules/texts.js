@@ -61,11 +61,31 @@ exports.serviceFeeSet = (hash, amount) => {
 }
 
 exports.payForArbiterService = (amount, address) => {
-	return `Arbbiter is asking ${amount} bytes for his service of resolving a dispute. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+	return `Arbiter is asking ${amount} bytes for his service of resolving a dispute. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
 }
 
 exports.service_fee_paid = (hash, amount) => {
 	return `We received a payment from plaintiff of total ${amount} bytes for contract ${hash}. Post your dispute resolution in the form of data feed with the name 'CONTRACT_${hash}' and value of winning side address`;
+}
+
+exports.appeal_started = (title) => {
+	return `We received an appeal to your decision on contract ${title}`;
+}
+
+exports.payAppealFee = (amount, address) => {
+	return `Moderator is asking ${amount} bytes for his service of resolving your appeal. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+}
+
+exports.appeal_fee_paid = (hash, title) => {
+	return `Appeal fee received for contract ${title} with hash ${hash}. You can resolve it now.`;
+}
+
+exports.appeal_resolved_arbiter = (hash, title) => {
+	return `Appeal for contract ${title} with hash ${hash} was resolved, Appeal fee got deducted from your deposit to compensate your incorrect decision. Please check that your arbiter listing is visible using 'status' command and follow instructions.`;
+}
+
+exports.appeal_resolved = (hash, title) => {
+	return `Appeal for contract ${title} with hash ${hash} was resolved.`;
 }
 
 

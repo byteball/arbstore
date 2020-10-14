@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ArbStoreWeb</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- Inevitable thing -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+		<!-- UIkit CSS -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/css/uikit.min.css" />
+
+		<!-- UIkit JS -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+	</head>
+	<body class="uk-margin-large uk-container uk-margin-top">
+		<h2>Contract <%= contract.title %></h2>
+		<h4>Updated on <%= status_change_date %></h4>
+		<ul>
+			<li>Hash is valid: <% if (is_hash_valid) { %><span class="uk-label uk-label-success">Yes</span><% } else { %><span class="uk-label uk-label-danger">NO!</span><% } %></li>
+			<li>Creation Date: <b><%= contract.creation_date %></b></li>
+			<li>Arbiter: <b><%= arbiter.real_name %></b> (<a href="/arbiter/<%= arbiter.hash %>"><%= arbiter_address %></a>)</li>
+			<li>Side 1 address: <b><%= side1_address %></b><% if (side1_address === winner) { %> <span class="uk-label uk-label-default">winner</span><% } %></li>
+			<li>Side 2 address: <b><%= side2_address %></b><% if (side2_address === winner) { %> <span class="uk-label uk-label-default">winner</span><% } %></li>
+			<li>Title: <b><%= contract.title %></b></li>
+			<li>Text: <b><%= contract.text %></b></li>
+		</ul>
+
+		<ul>
+			<li>Plaintiff pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= plaintiff_pairing_code %></a></li>
+			<li>Peer pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= peer_pairing_code %></a></li>
+			<li>Arbiter pairing code: <a href="obyte:<%= arbiter.info.pairing_code %>"><%= arbiter.info.pairing_code %></a></li>
+		</ul>
+
+		<% if (status === 'in_appeal') { %>
+		<button class="uk-button uk-button-default uk-margin-right close">Close appeal</button> <button class="uk-button uk-button-primary fulfill">Fulfill appeal</button>
+		<% } %>
+	</body>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('.close,.fulfill').click(function(e){
+		var action = $(this).hasClass('fulfill') ? 'fulfill' : 'close';
+		$.post('?action=' + action, function(){
+			window.location.reload();
+		}).fail(function(data) {
+			alert(data.responseText);
+		});
+	});
+});
+</script>
+</html>
