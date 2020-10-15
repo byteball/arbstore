@@ -35,13 +35,16 @@ function onReady() {
 	//network.start();
 
 	let last_plaintiff_device_address = null;
+	let appellant_device_address = null;
 	eventBus.on('paired', from_address => {
 		lastPairedAddress = from_address;
 		if (last_plaintiff_device_address === from_address) {
 			last_plaintiff_device_address = null;
 			return;
 		}
-		device.sendMessageToDevice(from_address, 'text', texts.greetings());
+		if (appellant_device_address != from_address)
+			device.sendMessageToDevice(from_address, 'text', texts.greetings());
+		appellant_device_address = null;
 	});
 
 	async function getProfileHash(address) {
@@ -330,10 +333,11 @@ async function postAnnounceUnit(hash) {
 // deposit topup
 eventBus.on('new_my_transactions', async arrUnits => {
 	let rows = await db.query(
-		`SELECT SUM(amount) as amount, hash
+		`SELECT SUM(outputs.amount) as amount, hash
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
-		WHERE unit IN(?) AND asset IS NULL
+		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address!=outputs.address -- exclude change (on appeal fee send)
+		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
 		GROUP BY deposit_address`, [arrUnits]);
 	rows.forEach(async row => {
 		let amount = row.amount;
@@ -348,7 +352,8 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		`SELECT hash
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
-		WHERE unit IN(?) AND asset IS NULL
+		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address!=outputs.address -- exclude change (on appeal fee send)
+		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
 		GROUP BY deposit_address`, [arrUnits]);
 	rows.forEach(async row => {
 		let arbiter = await arbiters.getByHash(row.hash);
@@ -757,6 +762,7 @@ router.post('/api/appeal/new', async ctx => {
 	if (pubkey.length !== 44)
 		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
 	device.addUnconfirmedCorrespondent(pubkey, hub, 'New', function(device_address){
+		appellant_device_address = device_address;
 		device.startWaitingForPairing(function(reversePairingInfo){
 			device.sendPairingMessage(hub, pubkey, pairing_secret, reversePairingInfo.pairing_secret, {
 				ifOk: () => {
