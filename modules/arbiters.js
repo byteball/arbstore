@@ -48,7 +48,7 @@ const select_arbiter_sql = `SELECT (fn.value || ' ' || ln.value) AS real_name,
 	LEFT JOIN private_profile_fields AS fn ON fn.private_profile_id=private_profiles.private_profile_id AND fn.field='first_name'
 	LEFT JOIN private_profile_fields AS ln ON ln.private_profile_id=private_profiles.private_profile_id AND ln.field='last_name'
 
-	LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbiter_contracts_arbstore WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
+	LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
 `;
 
 function getByAddress(address) {
@@ -134,8 +134,8 @@ function getAllVisible() {
 			MAX(latest_units.creation_date) AS last_unit_date
 			FROM arbiters
 
-			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbiter_contracts_arbstore GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
-			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbiter_contracts_arbstore WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
+			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbstore_arbiter_contracts GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
+			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
 
 			JOIN outputs ON outputs.address=arbiters.deposit_address
 			JOIN units USING (unit)

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS arbiters (
 	FOREIGN KEY (deposit_address) REFERENCES my_addresses(address)
 );
 -- query separator
-CREATE TABLE IF NOT EXISTS arbiter_contracts_arbstore (
+CREATE TABLE IF NOT EXISTS arbstore_arbiter_contracts (
 	hash CHAR(44) NOT NULL PRIMARY KEY,
 	unit CHAR(44) NULL UNIQUE,
 	shared_address CHAR(32) NOT NULL,

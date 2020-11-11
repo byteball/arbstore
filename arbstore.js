@@ -31,11 +31,11 @@ fs.readFile('languages.json', 'utf8', function(err, contents) {
 	available_languages = JSON.parse(contents);
 });
 
-function onReady() {
-	//network.start();
+let last_plaintiff_device_address = null;
+let appellant_device_address = null;
 
-	let last_plaintiff_device_address = null;
-	let appellant_device_address = null;
+function onReady() {
+
 	eventBus.on('paired', from_address => {
 		lastPairedAddress = from_address;
 		if (last_plaintiff_device_address === from_address) {
@@ -123,7 +123,7 @@ function onReady() {
 					});
 				});
 			}},
-			{pattern: /\(profile:(.+?)\)|stay_anonymous/, action: async (arrProfileMatches) => {
+			{pattern: /\(profile:(.+?)\)|stay anonymous/, action: async (arrProfileMatches) => {
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
@@ -367,7 +367,7 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 	let rows = await db.query(
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
-		CROSS JOIN arbiter_contracts_arbstore AS arb_c ON outputs.address=arb_c.service_fee_address
+		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.service_fee_address
 		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
 		GROUP BY service_fee_address`, [arrUnits]);
 	rows.forEach(async row => {
@@ -384,14 +384,21 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 	let rows = await db.query(
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
-		CROSS JOIN arbiter_contracts_arbstore AS arb_c ON outputs.address=arb_c.appeal_fee_address
+		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.appeal_fee_address
 		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
 		GROUP BY appeal_fee_address`, [arrUnits]);
 	rows.forEach(async row => {
 		let contract = await contracts.get(row.hash);
 		if (contract.status !== "appeal_requested" || row.amount < conf.AppealFeeAmount) return;
 		await contracts.updateStatus(contract.hash, "in_appeal");
-	 	device.sendMessageToDevice(conf.ModeratorDeviceAddress, 'text', texts.appeal_fee_paid(contract.hash, contract.contract.title));
+		let pdRows = await db.query(
+			`SELECT device_address
+			FROM correspondent_devices
+			WHERE device_address IN(?)`, conf.ModeratorDeviceAddresses
+		);
+		pdRows.forEach(pdRow => {
+			device.sendMessageToDevice(pdRow.device_address, 'text', texts.appeal_fee_paid(contract.hash, contract.contract.title));
+		})
 	});
 });
 
@@ -520,9 +527,9 @@ router.get('/list', async ctx => {
 });
 let lastPairedAddress = '';
 moderatorRouter.get('/checklogin', async ctx => {
-	if (lastPairedAddress != conf.ModeratorDeviceAddress)
+	if (!conf.ModeratorDeviceAddresses.includes(lastPairedAddress))
 		return ctx.body='false';
-	ctx.cookies.set('address', encrypt(conf.ModeratorDeviceAddress));
+	ctx.cookies.set('address', encrypt(lastPairedAddress));
 	ctx.redirect('/moderator');
 });
 moderatorRouter.get('/pair', async ctx => {
@@ -534,7 +541,7 @@ moderatorRouter.get('/pair', async ctx => {
 });
 function checkLogin(ctx) {
 	let address = decrypt(ctx.cookies.get('address'));
-	if (!address || address != conf.ModeratorDeviceAddress)
+	if (!address || !conf.ModeratorDeviceAddresses.includes(address))
 		ctx.redirect('/moderator/pair');
 };
 moderatorRouter.get('/', async ctx => {

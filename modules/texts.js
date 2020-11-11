@@ -13,7 +13,7 @@ exports.not_attested = () => {
 
 exports.reveal_profile = () => {
 	return `[Reveal your real name](profile-request:first_name,last_name) to reveal your real name to users
-or [stay anonymous](command:stay_anonymous)`;
+or [stay anonymous](command:stay anonymous)`;
 };
 
 exports.already_registered_from_different_address = () => {

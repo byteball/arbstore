@@ -17,6 +17,7 @@
 		<!-- UIkit JS -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 	</head>
 	<body>
 		<div class="uk-section uk-section-primary uk-light">
@@ -27,8 +28,9 @@
 			</div>
 		</div>
 		<div class="uk-card uk-card-body">
-			<p>Please pair with the wallet you setup in your ArbStore config under <code>ModeratorDeviceAddress</code> variable.</p>
+			<p>Please pair with the wallet you setup in your ArbStore config under <code>ModeratorDeviceAddresses</code> variable.</p>
 			<o>Pairing code: <a href="obyte:<%= pairing_code %>"><%= pairing_code %></a></o>
+			<div id="qrcode"></div>
 		</div>
 	</body>
 <script type="text/javascript">
@@ -40,5 +42,6 @@ $(document).ready(function() {
 		});
 	}, 500);
 });
+new QRCode(document.getElementById("qrcode"), "<%= pairing_code %>");
 </script>
 </html>
