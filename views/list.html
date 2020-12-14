@@ -22,6 +22,12 @@
 			.saved {
 				border-radius: 5px;
 			}
+			.arbiter {
+				cursor: pointer;
+			}
+			.arbiter:hover {
+				background-color: #F9F9F9;
+			}
 		</style>
 	</head>
 	<body>
@@ -40,7 +46,7 @@
 			</thead>
 			<tbody>
 				<% arbiter_list.forEach(function(arbiter) { %>
-					<tr data-hash="<%= arbiter.hash %>" onclick="window.location='/arbiter/<%= arbiter.hash %>';">
+					<tr data-hash="<%= arbiter.hash %>" onclick="window.location='/arbiter/<%= arbiter.hash %>';" class="arbiter">
 						<td><%= arbiter.real_name %></td>
 						<td><%= arbiter.address %></td>
 						<td><%= arbiter.info.bio %></td>

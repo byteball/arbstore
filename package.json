@@ -16,7 +16,9 @@
     "koa-router": "^7.4.0",
     "koa-views": "^6.2.0",
     "lodash": "^4.17.15",
-    "moment": "^2.24.0",
-    "ocore": "git+https://github.com/byteball/ocore.git"
+    "moment": "^2.24.0"
+  },
+  "resolutions": {
+    "level-rocksdb": "^4.0.0"
   }
 }

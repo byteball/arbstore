@@ -3,7 +3,7 @@
 const conf = require('ocore/conf');
 
 exports.greetings = () => {
-	return `Hello, this bot can help you attest yourself as an arbiter.
+	return `Hello, this bot can help you signup as an arbiter.
 To start, send me your address. Address should be attested through Real Name Attestation bot.`;
 };
 
@@ -60,8 +60,8 @@ exports.serviceFeeSet = (hash, amount) => {
 	return `Your fee for resolving dispute on contract ${hash} is set to ${amount} bytes. Payment request is sent to plaintiff. We will notify you when payment is received.`;
 }
 
-exports.payForArbiterService = (amount, address) => {
-	return `Arbiter is asking ${amount} bytes for his service of resolving a dispute. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
+	return `${real_name} is asking ${amount} bytes for their service of resolving a dispute. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
 }
 
 exports.service_fee_paid = (hash, amount) => {
@@ -73,7 +73,7 @@ exports.appeal_started = (title) => {
 }
 
 exports.payAppealFee = (amount, address) => {
-	return `Moderator is asking ${amount} bytes for his service of resolving your appeal. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+	return `Moderator is asking ${amount} bytes for their service of resolving your appeal. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
 }
 
 exports.appeal_fee_paid = (hash, title) => {
@@ -86,6 +86,10 @@ exports.appeal_resolved_arbiter = (hash, title) => {
 
 exports.appeal_resolved = (hash, title) => {
 	return `Appeal for contract ${title} with hash ${hash} was resolved.`;
+}
+
+exports.contract_completed = (hash) => {
+	return `Contract with hash ${hash} was completed by contract parties.`;
 }
 
 

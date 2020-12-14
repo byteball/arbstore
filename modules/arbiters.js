@@ -10,7 +10,7 @@ const moment = require('moment');
 function create(address, device_address){
 	return new Promise((resolve) => {
 		headlessWallet.issueNextMainAddress(async deposit_address => {
-			let hash = chash.getChash160(address + device_address + deposit_address + Date.now().toString());
+			let hash = chash.getChash160(address + device_address + deposit_address + Date.now().toString()).substr(0, 16);
 			await db.query(`INSERT INTO arbiters (address, device_address, hash, deposit_address) VALUES (?, ?, ?, ?)`, [address, device_address, hash, deposit_address]);
 			resolve([hash, deposit_address]);
 		});

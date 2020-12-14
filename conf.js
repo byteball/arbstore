@@ -11,7 +11,7 @@ exports.storage = 'sqlite';
 //exports.socksHost = '127.0.0.1';
 //exports.socksPort = 9050;
 
-exports.hub = process.env.testnet ? 'obyte.org/bb-test' : (process.env.devnet ? 'localhost:6611' : 'obyte.org/bb');
+exports.hub = process.env.testnet ? 'obyte.org/bb-test' : (process.env.devnet ? 'arbregistry.ngrok.io' : 'obyte.org/bb');
 exports.deviceName = 'ArbStore';
 exports.permanent_pairing_secret = '0000';
 exports.control_addresses = [''];
@@ -22,6 +22,7 @@ exports.bSingleAddress = false;
 exports.bStaticChangeAddress = true;
 exports.KEYS_FILENAME = 'keys.json';
 exports.logToSTDOUT = true;
+exports.bNoPassphrase = true;
 
 // smtp https://github.com/byteball/ocore/blob/master/mail.js
 exports.smtpTransport = 'local'; // use 'local' for Unix Sendmail
@@ -41,7 +42,7 @@ exports.ArbStoreWebDomain = 'localhost';
 exports.ArbStoreWebPort = 9003;
 exports.ArbStoreWebURI = `${exports.ArbStoreWebProto}://${exports.ArbStoreWebDomain}:${exports.ArbStoreWebPort}/`;
 exports.WebTokenSalt = 'changemeASAP';
-exports.ModeratorDeviceAddresses = ['0ODU2GTXH4GAHVSIWKVJM6WC5RKFT36NF'];
+exports.ModeratorDeviceAddresses = ['0FRHQZIUM32IIZJX22WRL3F6BRYKQDWUD'];
 exports.AppealFeeAmount = 10000;
 exports.min_deposit = 3*exports.AppealFeeAmount + 10000; // usually ~3xAppealFeeAmount
 

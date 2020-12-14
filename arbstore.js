@@ -34,17 +34,89 @@ fs.readFile('languages.json', 'utf8', function(err, contents) {
 let last_plaintiff_device_address = null;
 let appellant_device_address = null;
 
+/*
+function createAsset(){
+	var composer = require('ocore/composer.js');
+	var callbacks = composer.getSavingCallbacks({
+		ifNotEnoughFunds: console.error,
+		ifError: console.error,
+		ifOk: async function(objJoint){
+			network.broadcastJoint(objJoint);
+			console.error('==== Asset ID:'+ objJoint.unit.unit);
+
+		}
+	});
+	var asset = {
+		cap: 2111100000000000,
+		//cap: 1000000,
+		is_private: false,
+		is_transferrable: true,
+		auto_destroy: false,
+		fixed_denominations: false, // if true then it's IndivisibleAsset, if false then it's DivisibleAsset
+		issued_by_definer_only: true,
+		cosigned_by_definer: false,
+		spender_attested: false,
+	//    issue_condition: ["in data feed", [["MO7ZZIU5VXHRZGGHVSZWLWL64IEND5K2"], "timestamp", ">=", 1453139371111]],
+	//    transfer_condition: ["has one equal", 
+	//        {equal_fields: ["address", "amount"], search_criteria: [{what: "output", asset: "base"}, {what: "output", asset: "this asset"}]}
+	//    ],
+		//attestors: ["X5ZHWBYBF4TUYS35HU3ROVDQJC772ZMG", "GZSEKMEQVOW2ZAHDZBABRTECDSDFBWVH", "2QLYLKHMUG237QG36Z6AWLVH4KQ4MEY6"].sort()
+	};
+	headlessWallet.readFirstAddress(function(definer_address){
+		composer.composeAssetDefinitionJoint(definer_address, asset, headlessWallet.signer, callbacks);
+	});
+}
+
+function issueAsset(asset) {
+	const divisibleAsset = require('ocore/divisible_asset.js');
+	let myAddress = "JDWHTTJTMMOGZULXJCWWDDV4IIEQAMZ6";
+
+	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
+		asset: asset,
+		paying_addresses: [myAddress],
+		fee_paying_addresses: [myAddress],
+		change_address: myAddress,
+		to_address: myAddress,
+		amount: 2111100000000000,
+		signer: headlessWallet.signer,
+		callbacks: {
+			ifError: console.error,
+			ifNotEnoughFunds: console.error,
+			ifOk: (objJoint) => {
+				network.broadcastJoint(objJoint);
+				console.error('==== Token issued');
+			}
+		}
+	});
+}
+
+function sendAsset(asset) {
+	headlessWallet.sendMultiPayment({
+		asset: asset,
+		to_address: "GF7L477BO6WL2DVJASWRR55TEGCNN5OO",
+		amount: 2111100000000000
+	});
+}
+*/
+
 function onReady() {
 
+	//createAsset();
+	//==== Asset ID:EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=
+	//issueAsset("EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=");
+	//sendAsset("EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=");
+
+	
+	
+	//network.start();
 	eventBus.on('paired', from_address => {
 		lastPairedAddress = from_address;
-		if (last_plaintiff_device_address === from_address) {
+		if (last_plaintiff_device_address === from_address || appellant_device_address === from_address) {
 			last_plaintiff_device_address = null;
+			appellant_device_address = null;
 			return;
 		}
-		if (appellant_device_address != from_address)
-			device.sendMessageToDevice(from_address, 'text', texts.greetings());
-		appellant_device_address = null;
+		device.sendMessageToDevice(from_address, 'text', texts.greetings());
 	});
 
 	async function getProfileHash(address) {
@@ -200,7 +272,7 @@ function onReady() {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /^(.{44})\s([\d]+)$/, action: async matches => { // service fee
+			{pattern: /^(.{44})\s([\d]+)\s?(.*)$/, action: async matches => { // service fee
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
@@ -212,7 +284,7 @@ function onReady() {
 				if (!contract)
 					return respond(`incorrect contract hash`);
 				await contracts.updateField("service_fee", hash, amount);
-
+				let comment = matches[3];
 				// pair with plaintiff and send payment request
 				var matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
 				if (!matches)
@@ -229,7 +301,7 @@ function onReady() {
 							ifOk: () => {
 								headlessWallet.issueNextMainAddress(async address => {
 									await contracts.updateField("service_fee_address", contract.hash, address);
-									device.sendMessageToDevice(device_address, 'text', texts.payForArbiterService(amount, address));
+									device.sendMessageToDevice(device_address, 'text', texts.payForArbiterService(current_arbiter.real_name, amount, address, current_arbiter.info.pairing_code, comment));
 								});
 							},
 							ifError: respond
@@ -410,7 +482,7 @@ function extractContractFromUnit(unit) {
 			FROM messages
 			JOIN unit_authors USING(unit)
 			JOIN definitions USING(definition_chash)
-			WHERE unit=? AND payload LIKE '{"contract_text_hash"%"arbiter"%'`, [unit]);
+			WHERE unit=? AND payload LIKE '{"contract_text_hash"%"arbiter"%' AND definition LIKE '["or",%'`, [unit]);
 		rows.forEach(async row => {
 			let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
 			if (!contract_hash)
@@ -421,10 +493,10 @@ function extractContractFromUnit(unit) {
 			let arbiter = await arbiters.getByAddress(arbiter_address[1]);
 			if (!arbiter)
 				return reject("arbiter is now known to this arbstore");
-			let amount = row.definition.match(/"amount":(\d+)/);
-			if (!amount)
-				return reject("no amount in the unit");
 			let definitionObj = JSON.parse(row.definition);
+			let amount = _.get(definitionObj, '[1][1][1][1][1].amount');
+			if (!amount || !validationUtils.isPositiveInteger(amount))
+				return reject("no amount in the unit");
 			let side1_address = _.get(definitionObj, '[1][0][1][0][1]');
 			let side2_address = _.get(definitionObj, '[1][0][1][1][1]');
 			if (!side1_address || !side2_address)
@@ -434,7 +506,7 @@ function extractContractFromUnit(unit) {
 				return reject("no asset in the unit");
 			if (asset[1] === "base")
 				asset[1] = null;
-			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount[1], asset[1], 'active', side1_address, side2_address);
+			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset[1], 'active', side1_address, side2_address);
 			resolve(await contracts.get(contract_hash[1]));
 		});
 		if (rows.length === 0) {
@@ -478,6 +550,22 @@ eventBus.on('mci_became_stable', async mci => {
 	});
 });
 
+// contract was completed 
+eventBus.on('mci_became_stable', async mci => {
+	let rows = await db.query(
+		`SELECT DISTINCT hash, arbiter_address
+		FROM units
+		JOIN inputs USING(unit)
+		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON inputs.address=arb_c.shared_address
+		WHERE arb_c.status='in_dispute' AND main_chain_index=? `, [mci]);
+	rows.forEach(async row => {
+		let contract = await contracts.get(row.hash);
+		await contracts.updateStatus(contract.hash, "completed");
+		let arbiter = await arbiters.getByAddress(row.arbiter_address);
+		device.sendMessageToDevice(arbiter.device_address, 'text', texts.contract_completed(row.hash));
+	});
+});
+
 function encrypt(text){
 	let cipher = crypto.createCipher('aes-256-ctr', conf.WebTokenSalt);
 	let crypted = cipher.update(text, 'utf8', 'hex');
@@ -518,6 +606,9 @@ app.use(views(__dirname + '/views', {
 }));
 app.use(bodyParser());
 
+router.get('/', async ctx => {
+	await ctx.render('index');
+});
 router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
 });
@@ -613,7 +704,11 @@ router.get('/arbiter/:hash', async ctx => {
 	let hash = ctx.params['hash'];
 	if (!hash)
 		ctx.throw(404);
-	let arbiter = await arbiters.getByHash(hash);
+	let arbiter;
+	if (hash.length === 16)
+		arbiter = await arbiters.getByHash(hash);
+	else 
+		arbiter = await arbiters.getByAddress(hash);
 	if (!arbiter)
 		ctx.throw(404, `hash not found`);
 	
