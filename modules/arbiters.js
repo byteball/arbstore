@@ -82,9 +82,9 @@ function getByHash(hash) {
 function parseInfo(row) {
 	row.info = JSON.parse(row.info);
 	if (!row.info) row.info = {tags: [], languages: []};
-	if (row.last_resolve_date) row.last_resolve_date = moment(row.last_resolve_date).fromNow();
-	if (row.creation_date) row.creation_date = moment(row.creation_date).fromNow();
-	if (row.last_unit_date) row.last_unit_date = moment(row.last_unit_date).fromNow();
+	if (row.last_resolve_date) row.last_resolve_date = moment.utc(row.last_resolve_date).fromNow();
+	if (row.creation_date) row.creation_date = moment.utc(row.creation_date).fromNow();
+	if (row.last_unit_date) row.last_unit_date = moment.utc(row.last_unit_date).fromNow();
 	return row;
 }
 
@@ -103,7 +103,7 @@ function setEnabled(hash, enabled) {
 function getDepositBalance(hash) {
 	return new Promise(async resolve => {
 		let arbiter = await getByHash(hash);
-		balances.readBalance(arbiter.deposit_address, assocBalances => {
+		balances.readOutputsBalance(arbiter.deposit_address, assocBalances => {
 			resolve(assocBalances["base"]["stable"]);
 		});
 	});
@@ -131,14 +131,14 @@ function getAllVisible() {
 			tc.total_cnt,
 			rc.resolved_cnt,
 			rc.last_resolve_date,
-			MAX(latest_units.creation_date) AS last_unit_date
+			MAX(latest_units.creation_date) AS last_unit_date,
+				(SELECT SUM(amount) FROM outputs 
+				JOIN units USING(unit) 
+				WHERE outputs.address=arbiters.deposit_address AND is_spent=0 AND sequence='good' AND is_stable=1) AS balance
 			FROM arbiters
 
 			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbstore_arbiter_contracts GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
 			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
-
-			JOIN outputs ON outputs.address=arbiters.deposit_address
-			JOIN units USING (unit)
 
 			LEFT JOIN unit_authors AS latest_unit_authors ON arbiters.address=latest_unit_authors.address
 			LEFT JOIN units AS latest_units ON latest_units.unit=latest_unit_authors.unit
@@ -147,9 +147,8 @@ function getAllVisible() {
 			LEFT JOIN private_profile_fields AS fn ON fn.private_profile_id=private_profiles.private_profile_id AND fn.field='first_name'
 			LEFT JOIN private_profile_fields AS ln ON ln.private_profile_id=private_profiles.private_profile_id AND ln.field='last_name'
 			
-			WHERE enabled=1 AND visible=1 AND is_spent=0 AND units.sequence='good' AND units.is_stable=1
+			WHERE enabled=1 AND visible=1 AND balance >= ?
 			GROUP BY arbiters.deposit_address
-			HAVING SUM(amount) >= ?
 			`, [conf.min_deposit]);
 		rows.forEach(arbiter => {
 			arbiter = parseInfo(arbiter);

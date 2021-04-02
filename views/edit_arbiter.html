@@ -57,7 +57,7 @@
 					available_tags.forEach(function(tag) { %>
 					<label><input class="uk-checkbox" name="tag-<%= i %>" type="checkbox" uk-toggle="target: .toggle<%= i %>; animation: uk-animation-slide-top" <%= info.tags[tag] ? 'checked' : '' %>> <%= tag %></label><br>
 					<div class="uk-section-muted uk-margin-bottom toggle<%= i %>" <%= info.tags[tag] ? '' : 'hidden' %>>
-						<input name="price-tag-<%= i %>" class="uk-input uk-form-blank" type="text" placeholder="service cost for <%= tag %> contracts, free-from text..." value="<%= info.tags[tag] %>">
+						<input name="price-tag-<%= i %>" class="uk-input uk-form-blank" type="text" placeholder="e.g.: 1%-3%, min $50..." value="<%= info.tags[tag] %>">
 					</div>
 					<% i++;}); %>
 				</div>

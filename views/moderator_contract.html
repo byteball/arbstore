@@ -19,28 +19,34 @@
 		<h4>Updated on <%= status_change_date %></h4>
 		<ul>
 			<li>Hash is valid: <% if (is_hash_valid) { %><span class="uk-label uk-label-success">Yes</span><% } else { %><span class="uk-label uk-label-danger">NO!</span><% } %></li>
-			<li>Creation Date: <b><%= contract.creation_date %></b></li>
+			<li>Creation Date: <b><%= new Date(contract.creation_date.replace(" ", "T")+".000Z").toLocaleString() %></b></li>
 			<li>Arbiter: <b><%= arbiter.real_name %></b> (<a href="/arbiter/<%= arbiter.hash %>"><%= arbiter_address %></a>)</li>
-			<li>Side 1 address: <b><%= side1_address %></b><% if (side1_address === winner) { %> <span class="uk-label uk-label-default">winner</span><% } %></li>
-			<li>Side 2 address: <b><%= side2_address %></b><% if (side2_address === winner) { %> <span class="uk-label uk-label-default">winner</span><% } %></li>
+			<li>Plaintiff address: <b><%= plaintiff_side == 1 ? side1_address : side2_address %></b><% if (winner_side == plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side1_attested ? '' : 'NOT') : (side2_attested ? '' : 'NOT') %> attested)</li>
+			<li>Defendant address: <b><%= plaintiff_side == 1 ? side2_address : side1_address %></b><% if (winner_side != plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side2_attested ? '' : 'NOT') : (side1_attested ? '' : 'NOT') %> attested)</li>
 			<li>Title: <b><%= contract.title %></b></li>
 			<li>Text: <b><%= contract.text %></b></li>
 		</ul>
 
 		<ul>
-			<li>Plaintiff pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= plaintiff_pairing_code %></a></li>
-			<li>Peer pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= peer_pairing_code %></a></li>
+			<li>Dispute plaintiff pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= plaintiff_pairing_code %></a><% if (plaintiff_side != winner_side) { %> <span class="uk-label uk-label-default">appellant</span><% } %></li>
+			<li>Defendant pairing code: <a href="obyte:<%= plaintiff_pairing_code %>"><%= peer_pairing_code %></a><% if (plaintiff_side == winner_side) { %> <span class="uk-label uk-label-default">appellant</span><% } %></li>
 			<li>Arbiter pairing code: <a href="obyte:<%= arbiter.info.pairing_code %>"><%= arbiter.info.pairing_code %></a></li>
 		</ul>
 
 		<% if (status === 'in_appeal') { %>
-		<button class="uk-button uk-button-default uk-margin-right close">Close appeal</button> <button class="uk-button uk-button-primary fulfill">Fulfill appeal</button>
+		<button class="uk-button uk-button-default uk-margin-right decline">Decline</button> <button class="uk-button uk-button-primary approve">Approve appeal</button>
+		<% } else { %>
+		<ul>
+			<li>Status: <span class="uk-text-<%= status == 'appeal_declined' ? 'danger' : 'success' %> %>"><%= status == 'appeal_declined' ? 'declined' : 'approved' %></span></li>
+		</ul>
 		<% } %>
 	</body>
 <script type="text/javascript">
 $(document).ready(function() {
-	$('.close,.fulfill').click(function(e){
-		var action = $(this).hasClass('fulfill') ? 'fulfill' : 'close';
+	$('.decline,.approve').click(function(e){
+		var action = $(this).hasClass('approve') ? 'approve' : 'decline';
+		if (!confirm("Are you sure you want to " + action + " appeal?"))
+			return;
 		$.post('?action=' + action, function(){
 			window.location.reload();
 		}).fail(function(data) {

@@ -22,32 +22,63 @@
 			.saved {
 				border-radius: 5px;
 			}
+			td {
+				cursor: pointer;
+			}
 		</style>
 	</head>
 	<body>
-		<ul class="uk-subnav uk-subnav-pill tags" uk-margin>
+		<ul uk-tab>
+			<li class="uk-active"><a href="">Pending appeals</a></li>
+			<li><a href="">Closed appeals</a></li>
 		</ul>
-		<table class="uk-table uk-table-justify uk-table-divider uk-container">
-			<thead>
-				<tr>
-					<th class="uk-width-small">hash</th>
-					<th>Title</th>
-					<th>Arbiter address</th>
-					<th>Winner</th>
-					<th>appeal date</th>
-				</tr>
-			</thead>
-			<tbody>
-				<% contracts.forEach(function(contract) { %>
-					<tr data-hash="<%= contract.hash %>" onclick="window.location='/moderator/<%= encodeURIComponent(contract.hash) %>';">
-						<td><%= contract.hash %></td>
-						<td><%= contract.contract.title %></td>
-						<td><%= contract.arbiter_address %></td>
-						<td><%= contract.winner %></td>
-						<td><%= contract.status_change_date %></td>
-					</tr>
-				<% }); %>
-			</tbody>
-		</table>
+		<ul class="uk-switcher">
+			<li>
+				<table class="uk-table uk-table-justify uk-table-divider uk-container">
+					<thead>
+						<tr>
+							<th class="uk-width-small">hash</th>
+							<th>Title</th>
+							<th>Arbiter address</th>
+							<th>appeal date</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% in_appeal.forEach(function(contract) { %>
+							<tr data-hash="<%= contract.hash %>" onclick="window.location='/moderator/<%= encodeURIComponent(contract.hash) %>';">
+								<td><%= contract.hash %></td>
+								<td><%= contract.contract.title %></td>
+								<td><%= contract.arbiter_address %></td>
+								<td><%= contract.status_change_date %></td>
+							</tr>
+						<% }); %>
+					</tbody>
+				</table>
+			</li>
+			<li>
+				<table class="uk-table uk-table-justify uk-table-divider uk-container">
+					<thead>
+						<tr>
+							<th class="uk-width-small">hash</th>
+							<th>Title</th>
+							<th>Arbiter address</th>
+							<th>appeal date</th>
+							<th>status</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% closed.forEach(function(contract) { %>
+							<tr data-hash="<%= contract.hash %>" onclick="window.location='/moderator/<%= encodeURIComponent(contract.hash) %>';">
+								<td><%= contract.hash %></td>
+								<td><%= contract.contract.title %></td>
+								<td><%= contract.arbiter_address %></td>
+								<td><%= contract.status_change_date %></td>
+								<td class="uk-text-<%= contract.status == 'appeal_declined' ? 'danger' : 'success' %> %>"><%= contract.status == 'appeal_declined' ? 'declined' : 'approved' %></td>
+							</tr>
+						<% }); %>
+					</tbody>
+				</table>
+			</li>
+		</ul>
 	</body>
 </html>

@@ -42,7 +42,7 @@ exports.ArbStoreWebDomain = 'localhost';
 exports.ArbStoreWebPort = 9003;
 exports.ArbStoreWebURI = `${exports.ArbStoreWebProto}://${exports.ArbStoreWebDomain}:${exports.ArbStoreWebPort}/`;
 exports.WebTokenSalt = 'changemeASAP';
-exports.ModeratorDeviceAddresses = ['0FRHQZIUM32IIZJX22WRL3F6BRYKQDWUD'];
+exports.ModeratorDeviceAddresses = ['0FRHQZIUM32IIZJX22WRL3F6BRYKQDWUD', '04MUXB6RXQMKVCWNQOQ3SCW2WTJN43NM3'];
 exports.AppealFeeAmount = 10000;
 exports.min_deposit = 3*exports.AppealFeeAmount + 10000; // usually ~3xAppealFeeAmount
 

@@ -25,7 +25,7 @@ exports.device_address_unknown = () => {
 }
 
 exports.topup_deposit = (amount, address) => {
-	return `Now you need to topup your arbiter's deposit. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+	return `Now you need to topup your arbiter's deposit. Deposit acts a safeguard in case an appeal for your decision is raised and your decision will be deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
 }
 
 exports.received_payment = (amount) => {
@@ -90,6 +90,9 @@ exports.appeal_resolved = (hash, title) => {
 
 exports.contract_completed = (hash) => {
 	return `Contract with hash ${hash} was completed by contract parties.`;
+}
+exports.service_fee_sent = (hash, amount, unit) => {
+	return `We deposited ${amount} bytes (minus fees) to your deposit address for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
 }
 
 

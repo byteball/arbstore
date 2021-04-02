@@ -6,7 +6,13 @@ const arbiter_contract = require('ocore/arbiter_contract');
 
 function get(hash) {
 	return new Promise((resolve) => {
-		db.query(`SELECT hash, unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, contract, side1_address, side2_address, winner FROM arbstore_arbiter_contracts WHERE hash=?`, [hash], function(rows) {
+		db.query(`SELECT arbstore_arbiter_contracts.hash, arbstore_arbiter_contracts.unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, contract, side1_address, side2_address, winner_side, plaintiff_side, 
+				side1_profile.private_profile_id IS NOT NULL AS side1_attested,
+				side2_profile.private_profile_id IS NOT NULL AS side2_attested
+			FROM arbstore_arbiter_contracts 
+			LEFT JOIN private_profiles AS side1_profile ON arbstore_arbiter_contracts.side1_address=side1_profile.address
+			LEFT JOIN private_profiles AS side2_profile ON arbstore_arbiter_contracts.side2_address=side2_profile.address
+			WHERE hash=?`, [hash], function(rows) {
 			var row = rows.length ? rows[0] : null;
 			if (row && row.contract) {
 				row.contract = JSON.parse(row.contract);
@@ -55,7 +61,7 @@ function updateStatus(hash, status) {
 }
 
 function updateField(field, hash, value) {
-	if (!["plaintiff_pairing_code", "peer_pairing_code", "service_fee", "service_fee_address", "appeal_fee_address", "contract", "winner"].includes(field))
+	if (!["plaintiff_pairing_code", "peer_pairing_code", "service_fee", "service_fee_address", "appeal_fee_address", "contract", "winner_side", "plaintiff_side", "amount", "asset"].includes(field))
 		throw new Error("wrong field for updateField method");
 	return new Promise((resolve) => {
 		db.query(`UPDATE arbstore_arbiter_contracts SET ${field}=? WHERE hash=?`, [value, hash], resolve);
@@ -64,7 +70,7 @@ function updateField(field, hash, value) {
 
 function getAllByStatus(status) {
 	return new Promise((resolve) => {
-		db.query(`SELECT * FROM arbstore_arbiter_contracts WHERE status=?`, [status], function(rows) {
+		db.query(`SELECT * FROM arbstore_arbiter_contracts WHERE status IN (?)`, [status], function(rows) {
 			rows.forEach(row => {
 				row.contract = JSON.parse(row.contract);
 			})
