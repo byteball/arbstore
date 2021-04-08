@@ -6,13 +6,9 @@ const arbiter_contract = require('ocore/arbiter_contract');
 
 function get(hash) {
 	return new Promise((resolve) => {
-		db.query(`SELECT arbstore_arbiter_contracts.hash, arbstore_arbiter_contracts.unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, contract, side1_address, side2_address, winner_side, plaintiff_side, 
-				side1_profile.private_profile_id IS NOT NULL AS side1_attested,
-				side2_profile.private_profile_id IS NOT NULL AS side2_attested
+		db.query(`SELECT arbstore_arbiter_contracts.hash, arbstore_arbiter_contracts.unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, contract, side1_address, side2_address, winner_side, plaintiff_side
 			FROM arbstore_arbiter_contracts 
-			LEFT JOIN private_profiles AS side1_profile ON arbstore_arbiter_contracts.side1_address=side1_profile.address
-			LEFT JOIN private_profiles AS side2_profile ON arbstore_arbiter_contracts.side2_address=side2_profile.address
-			WHERE hash=?`, [hash], function(rows) {
+			WHERE hash=?`, [hash], async function(rows) {
 			var row = rows.length ? rows[0] : null;
 			if (row && row.contract) {
 				row.contract = JSON.parse(row.contract);
@@ -24,6 +20,19 @@ function get(hash) {
 					amount: row.amount,
 					asset: row.asset
 				}) === row.hash;
+				row.side1_attested = false;
+				row.side2_attested = false;
+				if (conf.trustedAttestorAddresses && conf.trustedAttestorAddresses.length) {
+					let payloads = await db.query(`SELECT payload FROM messages
+						JOIN unit_authors USING(unit) WHERE address IN(?) AND app='attestation'`, [conf.trustedAttestorAddresses]);
+					payloads.forEach(payload => {
+						let json = JSON.parse(payload.payload);
+						if (json.address === row.side1_address)
+							row.side1_attested = true;
+						if (json.address === row.side2_address)
+							row.side2_attested = true;
+					});
+				}
 			}
 			resolve(row);
 		});

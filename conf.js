@@ -46,6 +46,8 @@ exports.ModeratorDeviceAddresses = ['0FRHQZIUM32IIZJX22WRL3F6BRYKQDWUD', '04MUXB
 exports.AppealFeeAmount = 10000;
 exports.min_deposit = 3*exports.AppealFeeAmount + 10000; // usually ~3xAppealFeeAmount
 
+exports.trustedAttestorAddresses = ['LJS2XD3M6XR4CBH44DQW7TCWYTYABTG4'];
+
 // Tags
 exports.available_tags = [
 	'IT',

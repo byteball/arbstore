@@ -327,7 +327,7 @@ function onReady() {
 	setInterval(async () => {
 		let rows = await db.query(`SELECT wac.hash, arbiters.deposit_address, wac.arbiter_address, wac.service_fee_address FROM arbstore_arbiter_contracts AS wac
 			JOIN arbiters ON arbiters.address=wac.arbiter_address
-			WHERE wac.status IN ('dispute_resolved', 'appeal_resolved', 'appeal_declined')
+			WHERE wac.status IN ('dispute_resolved', 'appeal_approved', 'appeal_declined')
 			AND julianday('now') - julianday(wac.status_change_date) > -1`, []);
 		rows.forEach(row => {
 			balances.readOutputsBalance(row.service_fee_address, async (assocBalances) => {
@@ -726,7 +726,7 @@ moderatorRouter.post('/:hash', async ctx => {
 	}
 	device.readCorrespondentsByDeviceAddresses([appellant_device_address], rows => {
 		rows.forEach(row => {
-			device.sendMessageToDevice(row.device_address, "arbiter_contract_update", {hash: contract.hash, field: "status", value: (action === 'approve' ? "appeal_resolved" : "appeal_declined")});
+			device.sendMessageToDevice(row.device_address, "arbiter_contract_update", {hash: contract.hash, field: "status", value: (action === 'approve' ? "appeal_approved" : "appeal_declined")});
 			//device.sendMessageToDevice(row.device_address, "text", texts.appeal_resolved(contract.hash, contract.contract.title));
 		});
 	});

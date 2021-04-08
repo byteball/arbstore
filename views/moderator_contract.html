@@ -21,8 +21,8 @@
 			<li>Hash is valid: <% if (is_hash_valid) { %><span class="uk-label uk-label-success">Yes</span><% } else { %><span class="uk-label uk-label-danger">NO!</span><% } %></li>
 			<li>Creation Date: <b><%= new Date(contract.creation_date.replace(" ", "T")+".000Z").toLocaleString() %></b></li>
 			<li>Arbiter: <b><%= arbiter.real_name %></b> (<a href="/arbiter/<%= arbiter.hash %>"><%= arbiter_address %></a>)</li>
-			<li>Plaintiff address: <b><%= plaintiff_side == 1 ? side1_address : side2_address %></b><% if (winner_side == plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side1_attested ? '' : 'NOT') : (side2_attested ? '' : 'NOT') %> attested)</li>
-			<li>Defendant address: <b><%= plaintiff_side == 1 ? side2_address : side1_address %></b><% if (winner_side != plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side2_attested ? '' : 'NOT') : (side1_attested ? '' : 'NOT') %> attested)</li>
+			<li>Plaintiff address: <b><%= plaintiff_side == 1 ? side1_address : side2_address %></b><% if (winner_side == plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side1_attested ? '' : 'NOT ') : (side2_attested ? '' : 'NOT ') %>attested)</li>
+			<li>Defendant address: <b><%= plaintiff_side == 1 ? side2_address : side1_address %></b><% if (winner_side != plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side2_attested ? '' : 'NOT ') : (side1_attested ? '' : 'NOT ') %>attested)</li>
 			<li>Title: <b><%= contract.title %></b></li>
 			<li>Text: <b><%= contract.text %></b></li>
 		</ul>
