@@ -79,7 +79,7 @@ function updateField(field, hash, value) {
 
 function getAllByStatus(status) {
 	return new Promise((resolve) => {
-		db.query(`SELECT * FROM arbstore_arbiter_contracts WHERE status IN (?)`, [status], function(rows) {
+		db.query(`SELECT * FROM arbstore_arbiter_contracts WHERE status IN (?) ORDER BY status_change_date DESC`, [status], function(rows) {
 			rows.forEach(row => {
 				row.contract = JSON.parse(row.contract);
 			})

@@ -1,6 +1,7 @@
 /*jslint node: true */
 'use strict';
 const conf = require('ocore/conf');
+const constants = require('ocore/constants');
 
 exports.greetings = () => {
 	return `Hello, this bot can help you signup as an arbiter.
@@ -25,11 +26,11 @@ exports.device_address_unknown = () => {
 }
 
 exports.topup_deposit = (amount, address) => {
-	return `Now you need to topup your arbiter's deposit. Deposit acts a safeguard in case an appeal for your decision is raised and your decision will be deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+	return `Now you need to topup your arbiter's deposit. Deposit acts a safeguard in case an appeal for your decision is raised and your decision will be deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
 }
 
 exports.received_payment = (amount) => {
-	return `Received ${amount/1e9} GB from you, please wait till it confirmed`;
+	return `Received ${formatAmount(amount)} from you, please wait till it confirmed`;
 }
 
 exports.payment_confirmed = () => {
@@ -49,7 +50,7 @@ exports.signMessage = (user_address) => {
 }
 
 exports.withdraw_completed = (unit, address) => {
-	return `Sent all bytes from your deposit to address ${address}. https://explorer.obyte.org/#${unit}`;
+	return `Sent all funds from your deposit to address ${address}. https://explorer.obyte.org/#${unit}`;
 }
 
 exports.already_announced = () => {
@@ -57,15 +58,19 @@ exports.already_announced = () => {
 }
 
 exports.serviceFeeSet = (hash, amount) => {
-	return `Your fee for resolving dispute on contract ${hash} is set to ${amount} bytes. Payment request is sent to plaintiff. We will notify you when payment is received.`;
+	return `Your fee for resolving dispute on contract ${hash} is set to ${formatAmount(amount)}. Payment request is sent to plaintiff. We will notify you when payment is received.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
-	return `${real_name} is asking ${amount} bytes for their service of resolving a dispute. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
+	return `${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
 }
 
 exports.service_fee_paid = (hash, amount) => {
-	return `We received a payment from plaintiff of total ${amount} bytes for contract ${hash}. Post your dispute resolution in the form of data feed with the name 'CONTRACT_${hash}' and value of winning side address`;
+	return `We received a payment from plaintiff of total ${formatAmount(amount)} for contract ${hash}. Post your dispute resolution in the form of data feed with the name 'CONTRACT_${hash}' and value of winning side address`;
+}
+
+exports.service_fee_paid_plaintiff = (hash, amount) => {
+	return `We received a payment from you of total ${formatAmount(amount)} for contract ${hash}. Arbiter can now resolve this dispute.`;
 }
 
 exports.appeal_started = (title) => {
@@ -73,11 +78,15 @@ exports.appeal_started = (title) => {
 }
 
 exports.payAppealFee = (amount, address) => {
-	return `Moderator is asking ${amount} bytes for their service of resolving your appeal. Please [Pay ${amount} to ${address}](obyte:${address}?amount=${amount})`;
+	return `Moderator is asking ${formatAmount(amount)} for their service of resolving your appeal. Please [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
 }
 
 exports.appeal_fee_paid = (hash, title) => {
 	return `Appeal fee received for contract ${title} with hash ${hash}. You can resolve it now.`;
+}
+
+exports.appeal_fee_paid_appellant = (hash, title) => {
+	return `Appeal fee received for contract ${title} with hash ${hash}. Moderator can now resolve it.`;
 }
 
 exports.appeal_resolved_arbiter = (hash, title) => {
@@ -92,7 +101,7 @@ exports.contract_completed = (hash) => {
 	return `Contract with hash ${hash} was completed by contract parties.`;
 }
 exports.service_fee_sent = (hash, amount, unit) => {
-	return `We deposited ${amount} bytes (minus fees) to your deposit address for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
+	return `We deposited ${formatAmount(amount)} (minus fees) to your deposit address for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
 }
 
 
@@ -111,9 +120,9 @@ exports.current_status = (arbiter) => {
 	let text = 'For list of available commands, type [help](command:help)\n\n';
 	if (!arbiter.visible)
 		text += `You are currently invisible in arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n`;
-	text += `Your deposit balance is: ${arbiter.balance} bytes.\n`;
+	text += `Your deposit balance is: ${formatAmount(arbiter.balance)}.\n`;
 	if (arbiter.balance < conf.min_deposit)
-		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add bytes, type [revive](command:revive)\n`;
+		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add funds, type [revive](command:revive)\n`;
 	if (!arbiter.enabled)
 		text += `You have been disabled by moderator. Contact the ArbStore to resolve it`;
 	return text;
@@ -127,3 +136,17 @@ exports.errorInitSql = () => {
 exports.errorEmail = () => {
 	return `please specify admin_email and from_email in your ${desktopApp.getAppDataDir()}/conf.json\n`;
 };
+
+exports.assetMetadata = null; // will be set in main file
+function formatAmount(amount) {
+	if (conf.asset) {
+		if (conf.asset === constants.BLACKBYTES_ASSET)
+			return `${amount/1e9} GBB`;
+		if (exports.assetMetadata) {
+			let decimals = exports.assetMetadata.decimals || 0;
+			return `${(amount / Math.pow(10, decimals)).toLocaleString([], {maximumFractionDigits: decimals})} of ${exports.assetMetadata.name}`;
+		}
+		return `${amount} of ${conf.asset}`
+	}
+	return `${amount/1e9} GB`;
+}

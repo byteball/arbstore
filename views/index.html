@@ -17,28 +17,119 @@
 		<!-- UIkit JS -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+
+		<style type="text/css">
+			.saved {
+				border-radius: 5px;
+			}
+			.arbiter {
+				cursor: pointer;
+			}
+			.arbiter:hover {
+				background-color: #F9F9F9;
+			}
+		</style>
 	</head>
 	<body>
 		<div class="uk-container">
 			<article class="uk-article">
 				<h1 class="uk-article-title">ArbStore</h1>
-				<p class="uk-text-lead">Arbiters Store allows you to find and choose an arbiter for your <i>contract with arbiter</i> on Obyte platfom.</p>
-				<p>If you wish to become an arbiter yourself, you can sign-up on this ArbStore by pairing with it's chatbot.</p>
+				<p class="uk-text-lead">Arbiters Store allows you to find and choose an arbiter for your <i>contract with arbitration</i> on Obyte platfom.</p>
+				<p>If you wish to become an arbiter yourself, you can sign-up on this ArbStore by pairing with it's chatbot. <a class="uk-button uk-button-primary" href="obyte:AsRQeE1D5LjUF3IjC/kSAgzpbaFytp4B26BZqVA8mizG@arbregistry.ngrok.io#0000">
+					Sign-up as Arbiter
+				</a></p>
 			</article>
-			<div class="uk-child-width-1-2@m uk-grid-small uk-grid-match uk-margin-top" uk-grid>
-				<a class="uk-button" href="/list">
-					<div class="uk-card uk-card-default uk-card-body">
-						<h3 class="uk-card-title">Arbiters List</h3>
-						<p>Find one that fits your contract needs.</p>
-					</div>
-				</a>
-				<a class="uk-button" href="obyte:AsRQeE1D5LjUF3IjC/kSAgzpbaFytp4B26BZqVA8mizG@arbregistry.ngrok.io#0000">
-					<div class="uk-card uk-card-primary uk-card-body">
-						<h3 class="uk-card-title">Sign-up as Arbiter</h3>
-						<p>Pair with chatbot and start signup process.</p>
-					</div>
-				</a>
-			</div>
+			<ul class="uk-subnav uk-subnav-pill tags" uk-margin>
+			</ul>
+			<table class="uk-table uk-table-justify uk-table-divider uk-container">
+				<thead>
+					<tr>
+						<th class="uk-width-small">Real Name</th>
+						<th>Address</th>
+						<th>Bio</th>
+						<th>№ Cases Resolved / Cases arbiter was picked</th>
+						<th>Last Case Resolved</th>
+						<th>Last Activity</th>
+					</tr>
+				</thead>
+				<tbody>
+					<% arbiter_list.forEach(function(arbiter) { %>
+						<tr data-hash="<%= arbiter.hash %>" onclick="window.location='/arbiter/<%= arbiter.hash %>';" class="arbiter">
+							<td><%= arbiter.real_name %></td>
+							<td><%= arbiter.address %></td>
+							<td><%= arbiter.info.bio %></td>
+							<td><%= arbiter.resolved_cnt %> / <%= arbiter.resolved_cnt %></td>
+							<td><%= arbiter.last_resolve_date %></td>
+							<td><%= arbiter.last_unit_date %></td>
+						</tr>
+					<% }); %>
+				</tbody>
+			</table>
 		</div>
 	</body>
+<script type="text/javascript">
+$(document).ready(function() {
+var arbiters_by_tag = {};
+<% let unique_tags = new Set();
+arbiter_list.forEach(function(arbiter) { %>
+	<% for (var tag in arbiter.info.tags) { 
+		unique_tags.add(tag) %>
+		if (!arbiters_by_tag["<%= tag %>"]) arbiters_by_tag["<%= tag %>"] = [];
+		arbiters_by_tag["<%= tag %>"].push("<%= arbiter.hash %>");
+	<% }; %>
+<% }); 
+for (let tag of unique_tags) { %>
+	$('.tags').append('<li class="tag" data-tag="<%= tag %>"><a href="#"><%= tag %></a></li>');
+<% } %>
+
+var active_tags = {};
+
+$('.tag').click(function(e) {
+	e.preventDefault();
+	var tag = $(this).text();
+	active_tags[tag] = !active_tags[tag];
+	rebuildHash();
+});
+
+function rebuildHash() {
+	var new_hash = "";
+	for (var tag in active_tags) {
+		if (active_tags[tag])
+			new_hash += "tag=" + encodeURIComponent(tag)+",";
+	}
+	window.location.hash = new_hash;
+}
+
+var key;
+function onHashChange() {
+	var hash = window.location.hash;
+	$('.uk-active').removeClass('uk-active');
+	if (hash && hash.length > 1) {
+		$('tr[data-hash]').hide();
+	} else {
+		$('tr[data-hash]').show();
+	}
+	var tokens = hash.split(/[=,#]/).filter(function(el) {return el !== "";});
+	for (var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if (i % 2 == 0)
+			key = token;
+		else {
+			switch(key) {
+				case "tag":
+					if (arbiters_by_tag[token]) {
+						arbiters_by_tag[token].forEach(function(hash) {
+							$('tr[data-hash='+hash+']').show();
+						});
+						$('li[data-tag="'+token+'"]').toggleClass('uk-active');
+					}
+					break;
+			}
+		}
+	}
+}
+$(window).on('hashchange', onHashChange);
+onHashChange();
+});
+</script>
 </html>

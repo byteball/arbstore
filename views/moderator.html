@@ -80,5 +80,11 @@
 				</table>
 			</li>
 		</ul>
+		<script type="text/javascript">
+			$('ul.uk-switcher > li').on('shown', function(el) {
+				location.hash = $(this).index();
+			});
+			UIkit.tab('ul[uk-tab]').show(location.hash.substr(1));
+		</script>
 	</body>
 </html>

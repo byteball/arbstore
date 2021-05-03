@@ -17,6 +17,8 @@ const network = require('ocore/network.js');
 const storage = require('ocore/storage.js');
 const objectHash = require('ocore/object_hash.js');
 const balances = require('ocore/balances.js');
+const wallet = require('ocore/wallet.js');
+const constants = require('ocore/constants.js');
 
 const Koa = require('koa');
 const app = new Koa();
@@ -35,81 +37,7 @@ fs.readFile('languages.json', 'utf8', function(err, contents) {
 let last_plaintiff_device_address = null;
 let appellant_device_address = null;
 
-/*
-function createAsset(){
-	var composer = require('ocore/composer.js');
-	var callbacks = composer.getSavingCallbacks({
-		ifNotEnoughFunds: console.error,
-		ifError: console.error,
-		ifOk: async function(objJoint){
-			network.broadcastJoint(objJoint);
-			console.error('==== Asset ID:'+ objJoint.unit.unit);
-
-		}
-	});
-	var asset = {
-		cap: 2111100000000000,
-		//cap: 1000000,
-		is_private: false,
-		is_transferrable: true,
-		auto_destroy: false,
-		fixed_denominations: false, // if true then it's IndivisibleAsset, if false then it's DivisibleAsset
-		issued_by_definer_only: true,
-		cosigned_by_definer: false,
-		spender_attested: false,
-	//    issue_condition: ["in data feed", [["MO7ZZIU5VXHRZGGHVSZWLWL64IEND5K2"], "timestamp", ">=", 1453139371111]],
-	//    transfer_condition: ["has one equal", 
-	//        {equal_fields: ["address", "amount"], search_criteria: [{what: "output", asset: "base"}, {what: "output", asset: "this asset"}]}
-	//    ],
-		//attestors: ["X5ZHWBYBF4TUYS35HU3ROVDQJC772ZMG", "GZSEKMEQVOW2ZAHDZBABRTECDSDFBWVH", "2QLYLKHMUG237QG36Z6AWLVH4KQ4MEY6"].sort()
-	};
-	headlessWallet.readFirstAddress(function(definer_address){
-		composer.composeAssetDefinitionJoint(definer_address, asset, headlessWallet.signer, callbacks);
-	});
-}
-
-function issueAsset(asset) {
-	const divisibleAsset = require('ocore/divisible_asset.js');
-	let myAddress = "JDWHTTJTMMOGZULXJCWWDDV4IIEQAMZ6";
-
-	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
-		asset: asset,
-		paying_addresses: [myAddress],
-		fee_paying_addresses: [myAddress],
-		change_address: myAddress,
-		to_address: myAddress,
-		amount: 2111100000000000,
-		signer: headlessWallet.signer,
-		callbacks: {
-			ifError: console.error,
-			ifNotEnoughFunds: console.error,
-			ifOk: (objJoint) => {
-				network.broadcastJoint(objJoint);
-				console.error('==== Token issued');
-			}
-		}
-	});
-}
-
-function sendAsset(asset) {
-	headlessWallet.sendMultiPayment({
-		asset: asset,
-		to_address: "GF7L477BO6WL2DVJASWRR55TEGCNN5OO",
-		amount: 2111100000000000
-	});
-}
-*/
-
 function onReady() {
-
-	//createAsset();
-	//==== Asset ID:EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=
-	//issueAsset("EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=");
-	//sendAsset("EgGLYLzrBBro1oq/XmFvemeY/QFnijMwHwxZDwRNjLc=");
-
-	
-	
-	//network.start();
 	eventBus.on('paired', from_address => {
 		lastPairedAddress = from_address;
 		if (last_plaintiff_device_address === from_address || appellant_device_address === from_address) {
@@ -273,19 +201,22 @@ function onReady() {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /^(.{44})\s([\d]+)\s?(.*)$/, action: async matches => { // service fee
+			{pattern: /^(.{44})\s([\d\.\,]+)\s?(.*)$/, action: async matches => { // service fee
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
 				let amount = matches[2];
 				if (amount <= 0)
 					return respond(`incorrect amount`);
+				if (!conf.asset || conf.asset === "base" || conf.asset === constants.BLACKBYTES_ASSET)
+					amount *= Math.pow(10, 9);
+				amount *= Math.pow(10, (texts.assetMetadata ? texts.assetMetadata.decimals : 0));
 				let hash = matches[1];
 				let contract = await contracts.get(hash);
 				if (!contract)
 					return respond(`incorrect contract hash`);
 				await contracts.updateField("service_fee", hash, amount);
-				let comment = matches[3];
+				let comment = matches[3].replace(/[^\w\d\s\,\.\(\)\?\!]/g, "");
 				// pair with plaintiff and send payment request
 				var matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
 				if (!matches)
@@ -323,7 +254,8 @@ function onReady() {
 			}}
 		]);
 	});
-
+	
+	// send accumulated service fees to arbiters
 	setInterval(async () => {
 		let rows = await db.query(`SELECT wac.hash, arbiters.deposit_address, wac.arbiter_address, wac.service_fee_address FROM arbstore_arbiter_contracts AS wac
 			JOIN arbiters ON arbiters.address=wac.arbiter_address
@@ -331,23 +263,31 @@ function onReady() {
 			AND julianday('now') - julianday(wac.status_change_date) > -1`, []);
 		rows.forEach(row => {
 			balances.readOutputsBalance(row.service_fee_address, async (assocBalances) => {
-				if (assocBalances["base"].stable == 0)
+				if (!assocBalances[conf.asset || "base"] || assocBalances[conf.asset || "base"].stable == 0)
 					return;
 				try {
 					let res = await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
 						to_address: row.deposit_address,
+						asset: conf.asset || "base",
 						send_all: true
 					});
 					let arbiter = await arbiters.getByAddress(row.arbiter_address);
-					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, assocBalances["base"].stable, res.unit));
+					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, assocBalances[conf.asset || "base"].stable, res.unit));
 				} catch (e) {
-					console.warn('error while trying to send payment to arbiter from address '+row.service_fee_address+', balance: ' + assocBalances["base"].total)
+					console.warn('error while trying to send payment to arbiter from address '+row.service_fee_address+', balance: ' + assocBalances[conf.asset || "base"].total)
 					return;
 				}
 			});
 		});
 	}, 3*1000);
+
+	// read asset metadata
+	if (conf.asset && conf.asset !== constants.BLACKBYTES_ASSET) {
+		wallet.readAssetMetadata([conf.asset], (metadata) => {
+			texts.assetMetadata = metadata[conf.asset];
+		});
+	}
 };
 
 async function checkDeposit(hash) {
@@ -397,20 +337,6 @@ async function postAnnounceUnit(hash) {
 		payload: payload
 	};
 	headlessWallet.readFirstAddress(async address => {
-		/*composer.composeJoint({
-			paying_addresses: [address],
-			outputs: [{address: address, amount: 0}],
-			messages: [objMessage],
-			signer: headlessWallet.signer, 
-			callbacks: composer.getSavingCallbacks({
-				ifNotEnoughFunds: onError,
-				ifError: onError,
-				ifOk: function(objJoint){
-					network.broadcastJoint(objJoint);
-					onDone(objJoint.unit.unit);
-				}
-			})
-		});*/
 		try {
 			let res = await headlessWallet.sendMultiPayment({
 				paying_addresses: [address],
@@ -423,9 +349,6 @@ async function postAnnounceUnit(hash) {
 			onError(`${e}`);
 		}
 	});
-
-	/*if (!arbiter.enabled && )
-		arbiters.setEnabled(hash, true);*/
 }
 
 // deposit topup
@@ -435,8 +358,8 @@ eventBus.on('new_my_transactions', async arrUnits => {
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
 		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address=arbiters.address -- only payments from arbiter address
-		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
-		GROUP BY deposit_address`, [arrUnits]);
+		WHERE outputs.unit IN(?) AND outputs.asset IS ?
+		GROUP BY deposit_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
 		let amount = row.amount;
 		let arbiter = await arbiters.getByHash(row.hash);
@@ -451,8 +374,8 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
 		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address=arbiters.address -- only payments from arbiter address
-		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
-		GROUP BY deposit_address`, [arrUnits]);
+		WHERE outputs.unit IN(?) AND outputs.asset IS ?
+		GROUP BY deposit_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
 		let arbiter = await arbiters.getByHash(row.hash);
 	 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.payment_confirmed());
@@ -466,14 +389,16 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
 		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.service_fee_address
-		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
-		GROUP BY service_fee_address`, [arrUnits]);
+		WHERE outputs.unit IN(?) AND outputs.asset IS ?
+		GROUP BY service_fee_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
 		let contract = await contracts.get(row.hash);
 		if (contract.status !== "dispute_requested" || row.amount < contract.service_fee) return;
 		await contracts.updateStatus(contract.hash, "in_dispute");
 		let arbiter = await arbiters.getByAddress(contract.arbiter_address);
+		let plaintiff_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
 	 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.service_fee_paid(contract.hash, row.amount));
+	 	device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, row.amount));
 	});
 });
 
@@ -483,8 +408,8 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
 		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.appeal_fee_address
-		WHERE outputs.unit IN(?) AND outputs.asset IS NULL
-		GROUP BY appeal_fee_address`, [arrUnits]);
+		WHERE outputs.unit IN(?) AND outputs.asset IS ?
+		GROUP BY appeal_fee_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
 		let contract = await contracts.get(row.hash);
 		if (contract.status !== "appeal_requested" || row.amount < conf.AppealFeeAmount) return;
@@ -497,6 +422,13 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		pdRows.forEach(pdRow => {
 			device.sendMessageToDevice(pdRow.device_address, 'text', texts.appeal_fee_paid(contract.hash, contract.contract.title));
 		})
+		let appellant_device_address;
+		if (contract.plaintiff_side !== contract.winner_side) {
+			appellant_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
+		} else {
+			appellant_device_address = objectHash.getDeviceAddress(contract.peer_pairing_code.split('@')[0]);
+		}
+		device.sendMessageToDevice(appellant_device_address, 'text', texts.appeal_fee_paid_appellant(contract.hash, contract.contract.title));
 	});
 });
 
@@ -636,14 +568,11 @@ app.use(views(__dirname + '/views', {
 app.use(bodyParser());
 
 router.get('/', async ctx => {
-	await ctx.render('index');
+	let arbiter_list = await arbiters.getAllVisible();
+	await ctx.render('index', {arbiter_list: arbiter_list});
 });
 router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
-});
-router.get('/list', async ctx => {
-	let arbiter_list = await arbiters.getAllVisible();
-	await ctx.render('list', {arbiter_list: arbiter_list});
 });
 let lastPairedAddress = '';
 moderatorRouter.get('/checklogin', async ctx => {
@@ -699,6 +628,13 @@ moderatorRouter.post('/:hash', async ctx => {
 	if (!action)
 		ctx.throw(404, `action not found`);
 	
+	let appellant_device_address;
+	if (contract.plaintiff_side != contract.winner_side) {
+		appellant_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
+	} else {
+		appellant_device_address = objectHash.getDeviceAddress(contract.peer_pairing_code.split('@')[0]);
+	}
+
 	if (action === 'approve') {
 		let loser = contract.winner_side === 1 ? contract.side2_address : contract.side1_address;
 
@@ -707,7 +643,9 @@ moderatorRouter.post('/:hash', async ctx => {
 				paying_addresses: [arbiter.deposit_address],
 				to_address: loser,
 				amount: 3*conf.AppealFeeAmount,
-				change_address: arbiter.deposit_address
+				asset: conf.asset,
+				change_address: arbiter.deposit_address,
+				recipient_device_address: appellant_device_address
 			});
 			device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_resolved_arbiter(contract.hash, contract.contract.title));
 			ctx.body = 'ok';
@@ -717,12 +655,6 @@ moderatorRouter.post('/:hash', async ctx => {
 		}
 	} else {
 		await contracts.updateStatus(contract.hash, "appeal_declined");
-	}
-	let appellant_device_address;
-	if (contract.plaintiff_side != contract.winner_side) {
-		appellant_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
-	} else {
-		appellant_device_address = objectHash.getDeviceAddress(contract.peer_pairing_code.split('@')[0]);
 	}
 	device.readCorrespondentsByDeviceAddresses([appellant_device_address], rows => {
 		rows.forEach(row => {
@@ -871,6 +803,7 @@ router.post('/api/dispute/new', async ctx => {
 		request.asset = contract.asset;
 	}
 	request.arbiter_address = contract.arbiter_address;
+	request.service_fee_asset = conf.asset || "base";
 	await contracts.updateStatus(contract.hash, "dispute_requested");
 	await contracts.updateField("plaintiff_pairing_code", contract.hash, request.my_pairing_code);
 	await contracts.updateField("peer_pairing_code", contract.hash, request.peer_pairing_code);

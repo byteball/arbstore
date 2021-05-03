@@ -104,7 +104,10 @@ function getDepositBalance(hash) {
 	return new Promise(async resolve => {
 		let arbiter = await getByHash(hash);
 		balances.readOutputsBalance(arbiter.deposit_address, assocBalances => {
-			resolve(assocBalances["base"]["stable"]);
+			if (assocBalances[conf.asset || "base"])
+				resolve(assocBalances[conf.asset || "base"]["stable"]);
+			else
+				resolve(0);
 		});
 	});
 }
@@ -134,7 +137,7 @@ function getAllVisible() {
 			MAX(latest_units.creation_date) AS last_unit_date,
 				(SELECT SUM(amount) FROM outputs 
 				JOIN units USING(unit) 
-				WHERE outputs.address=arbiters.deposit_address AND is_spent=0 AND sequence='good' AND is_stable=1) AS balance
+				WHERE outputs.address=arbiters.deposit_address AND is_spent=0 AND sequence='good' AND is_stable=1 AND outputs.asset IS ?) AS balance
 			FROM arbiters
 
 			LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbstore_arbiter_contracts GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
@@ -149,7 +152,7 @@ function getAllVisible() {
 			
 			WHERE enabled=1 AND visible=1 AND balance >= ?
 			GROUP BY arbiters.deposit_address
-			`, [conf.min_deposit]);
+			`, [conf.asset, conf.min_deposit]);
 		rows.forEach(arbiter => {
 			arbiter = parseInfo(arbiter);
 		});

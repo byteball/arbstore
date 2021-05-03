@@ -13,6 +13,9 @@
 		<!-- UIkit JS -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+
+		<!-- Markdown -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.6/markdown-it.min.js" integrity="sha512-7U8vY7c6UQpBNQOnBg3xKX502NAckvk70H1nWvh6W7izA489jEz+RCN3ntT1VMdXewaSKkOrEBegp/h6SPXrjw==" crossorigin="anonymous"></script>
 	</head>
 	<body class="uk-margin-large uk-container uk-margin-top">
 		<h2>Contract <%= contract.title %></h2>
@@ -24,7 +27,7 @@
 			<li>Plaintiff address: <b><%= plaintiff_side == 1 ? side1_address : side2_address %></b><% if (winner_side == plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side1_attested ? '' : 'NOT ') : (side2_attested ? '' : 'NOT ') %>attested)</li>
 			<li>Defendant address: <b><%= plaintiff_side == 1 ? side2_address : side1_address %></b><% if (winner_side != plaintiff_side) { %> <span class="uk-label uk-label-default">winner</span><% } %> (<%= plaintiff_side == 1 ? (side2_attested ? '' : 'NOT ') : (side1_attested ? '' : 'NOT ') %>attested)</li>
 			<li>Title: <b><%= contract.title %></b></li>
-			<li>Text: <b><%= contract.text %></b></li>
+			<li>Text: <span id="text"><%= contract.text %></span></li>
 		</ul>
 
 		<ul>
@@ -53,6 +56,8 @@ $(document).ready(function() {
 			alert(data.responseText);
 		});
 	});
+	var md = window.markdownit({linkify: true}).disable(['image', 'link']);
+	$('#text').html(md.render($('#text').html()));
 });
 </script>
 </html>
