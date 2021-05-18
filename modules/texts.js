@@ -91,20 +91,20 @@ exports.appeal_fee_paid_appellant = (hash, title) => {
 	return `Appeal fee received for contract ${title} with hash ${hash}. Moderator can now resolve it.`;
 }
 
-exports.appeal_resolved_arbiter = (hash, title) => {
-	return `Appeal for contract ${title} with hash ${hash} was resolved, Appeal fee got deducted from your deposit to compensate your incorrect decision. Please check that your arbiter listing is visible using 'status' command and follow instructions.`;
+exports.appeal_resolved_arbiter = (hash, title, appeal_fee) => {
+	return `The appeal for contract ${title} with hash ${hash} was approved. The appeal fee ${formatAmount(appeal_fee)} got deducted from your deposit to compensate for incorrect decision. Please check that your arbiter listing is still visible using 'status' command and follow the instructions.`;
 }
 
 exports.appeal_resolved = (hash, title) => {
-	return `Appeal for contract ${title} with hash ${hash} was resolved.`;
+	return `The appeal for contract ${title} with hash ${hash} was approved.`;
 }
 
 exports.contract_completed = (hash) => {
-	return `Contract with hash ${hash} was completed by contract parties.`;
+	return `The contract with hash ${hash} was completed by contract parties.`;
 }
 
-exports.service_fee_sent = (hash, amount, unit) => {
-	return `We deposited ${formatAmount(amount)} (minus fees) to your deposit address for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
+exports.service_fee_sent = (hash, amount, cut, unit) => {
+	return `We deposited ${formatAmount(amount)} to your deposit address (we charged the ArbStore cut ${cut*100}% from the money paid by plaintiff) for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
 }
 
 exports.not_enough_funds = (amount) => {

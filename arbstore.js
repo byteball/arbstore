@@ -229,24 +229,24 @@ function onReady() {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /^(.{44})\s([\d\.]+)\s?(.*)$/, action: async matches => { // service fee
+			{function: input => input.split(/\r\n|\r|\n/).length < 2 ? false : input.split(/\r\n|\r|\n/), action: async lines => { // service fee, or any multiline message
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
-				let amount = parseFloat(matches[2]);
-				if (amount <= 0)
+				if (!(/^\d+\.?\d*$/.test(lines[1])) || !(parseFloat(lines[1]) > 0))
 					return respond(`incorrect amount`);
+				let amount = parseFloat(lines[1]);
 				if (!conf.asset || conf.asset === "base" || conf.asset === constants.BLACKBYTES_ASSET)
 					amount *= Math.pow(10, 9);
 				amount *= Math.pow(10, (texts.assetMetadata ? texts.assetMetadata.decimals : 0));
-				let hash = matches[1];
+				let hash = lines[0];
 				let contract = await contracts.get(hash);
 				if (!contract)
 					return respond(`incorrect contract hash`);
 				await contracts.updateField("service_fee", hash, amount);
-				let comment = matches[3].replace(/(.*)\[.*\]\(.*\)(.*)/g, "$1$2");
+				let comment = lines.length > 2 ? lines[2].replace(/(.*)\[.*\]\(.*\)(.*)/g, "$1$2") : "";
 				// pair with plaintiff and send payment request
-				var matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
+				let matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
 				if (!matches)
 					return respond(`Invalid pairing code`);
 				var pubkey = matches[1];
@@ -288,16 +288,27 @@ function onReady() {
 				if (!assocBalances[conf.asset || "base"] || assocBalances[conf.asset || "base"].stable == 0)
 					return;
 				try {
+					let amount = Math.round((1-conf.ArbStoreCut) * assocBalances[conf.asset || "base"].stable);
 					let res = await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
 						change_address: row.service_fee_address,
 						fee_paying_wallet: [arbstoreFirstAddress],
 						to_address: row.deposit_address,
 						asset: conf.asset || "base",
-						amount: assocBalances[conf.asset || "base"].stable
+						amount: amount
 					});
 					let arbiter = await arbiters.getByAddress(row.arbiter_address);
-					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, assocBalances[conf.asset || "base"].stable, res.unit));
+					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, amount, conf.ArbStoreCut, res.unit));
+
+					// send ArbStoreCut to our first address
+					await headlessWallet.sendMultiPayment({
+						paying_addresses: [row.service_fee_address],
+						change_address: row.service_fee_address,
+						fee_paying_wallet: [arbstoreFirstAddress],
+						to_address: arbstoreFirstAddress,
+						asset: conf.asset || "base",
+						amount: Math.round(conf.ArbStoreCut * assocBalances[conf.asset || "base"].stable)
+					});
 				} catch (e) {
 					console.warn('error while trying to send payment to arbiter from address '+row.service_fee_address+', balance: ' + assocBalances[conf.asset || "base"].total)
 					return;
@@ -670,7 +681,7 @@ moderatorRouter.post('/:hash', async ctx => {
 				change_address: arbiter.deposit_address,
 				recipient_device_address: appellant_device_address
 			});
-			device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_resolved_arbiter(contract.hash, contract.contract.title));
+			device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_resolved_arbiter(contract.hash, contract.contract.title, 3*conf.AppealFeeAmount));
 			ctx.body = 'ok';
 			await contracts.updateStatus(contract.hash, "appeal_approved");
 		} catch(e) {

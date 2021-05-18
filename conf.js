@@ -45,6 +45,7 @@ exports.WebTokenSalt = 'changemeASAP';
 exports.ModeratorDeviceAddresses = ['0FRHQZIUM32IIZJX22WRL3F6BRYKQDWUD', '04MUXB6RXQMKVCWNQOQ3SCW2WTJN43NM3'];
 exports.AppealFeeAmount = 10000;
 exports.min_deposit = 3*exports.AppealFeeAmount + 10000; // usually ~3xAppealFeeAmount
+exports.ArbStoreCut = 0.1; //a cut taken from each arbiter's service payment in favor of ArbStore
 exports.asset = '9EEnyOvsMgh8SkPvsRkIiNhSXwvplZk1/8Nr0h17jUw=';
 
 exports.trustedAttestorAddresses = ['LJS2XD3M6XR4CBH44DQW7TCWYTYABTG4'];
