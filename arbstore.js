@@ -36,9 +36,14 @@ fs.readFile('languages.json', 'utf8', function(err, contents) {
 
 let last_plaintiff_device_address = null;
 let appellant_device_address = null;
+let arbstoreFirstAddress = null;
 
 function onReady() {
-	eventBus.on('paired', from_address => {
+	headlessWallet.readFirstAddress(async address => {
+		arbstoreFirstAddress = address;
+	});
+	eventBus.on('paired', (from_address, secret) => {
+		lastSecret = secret;
 		lastPairedAddress = from_address;
 		if (last_plaintiff_device_address === from_address || appellant_device_address === from_address) {
 			last_plaintiff_device_address = null;
@@ -162,7 +167,16 @@ function onReady() {
 				postAnnounceUnit(current_arbiter.hash);
 			}},
 			{pattern: /^help$/, action: () => respond(texts.help())},
-			{pattern: /^edit_info$/, action: async () => {
+			{pattern: /^status$/, action: async () => {
+				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
+				if (!current_arbiter)
+					respond(texts.greetings());
+				else {
+					current_arbiter.balance = await arbiters.getDepositBalance(current_arbiter.hash);
+					respond(texts.current_status(current_arbiter));
+				}
+			}},
+			{pattern: /^edit\sinfo$/, action: async () => {
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
@@ -188,24 +202,38 @@ function onReady() {
 					return respond(texts.device_address_unknown());
 				postAnnounceUnit(current_arbiter.hash);
 			}},
-			{pattern: /^withdraw$/, action: async () => {
+			{pattern: /^withdraw\s?(all)?$/, action: async matches => {
+				let all = (matches[1] === "all");
 				if (network.isCatchingUp())
 					return respond(`Sync is in progress, try again later`);
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
 				try {
-					let res = await headlessWallet.sendAllBytesFromAddress(current_arbiter.deposit_address, current_arbiter.address, current_arbiter.device_address);
-					respond(texts.withdraw_completed(res.unit, current_arbiter.address));
+					let amount = await arbiters.getDepositBalance(current_arbiter.hash);
+					if (!all)
+						amount -= conf.min_deposit;
+					if (amount <= 0)
+						return respond(texts.not_enough_funds(amount+conf.min_deposit));
+					let res = await headlessWallet.sendMultiPayment({
+						paying_addresses: [current_arbiter.deposit_address],
+						change_address: current_arbiter.deposit_address,
+						to_address: current_arbiter.address,
+						fee_paying_wallet: [arbstoreFirstAddress],
+						recipient_device_address: from_address,
+						asset: conf.asset || "base",
+						amount: amount
+					});
+					respond(texts.withdraw_completed(amount, res.unit, current_arbiter.address));
 				} catch(e) {
 					respond(`${e}`);
 				}
 			}},
-			{pattern: /^(.{44})\s([\d\.\,]+)\s?(.*)$/, action: async matches => { // service fee
+			{pattern: /^(.{44})\s([\d\.]+)\s?(.*)$/, action: async matches => { // service fee
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
-				let amount = matches[2];
+				let amount = parseFloat(matches[2]);
 				if (amount <= 0)
 					return respond(`incorrect amount`);
 				if (!conf.asset || conf.asset === "base" || conf.asset === constants.BLACKBYTES_ASSET)
@@ -216,7 +244,7 @@ function onReady() {
 				if (!contract)
 					return respond(`incorrect contract hash`);
 				await contracts.updateField("service_fee", hash, amount);
-				let comment = matches[3].replace(/[^\w\d\s\,\.\(\)\?\!]/g, "");
+				let comment = matches[3].replace(/(.*)\[.*\]\(.*\)(.*)/g, "$1$2");
 				// pair with plaintiff and send payment request
 				var matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
 				if (!matches)
@@ -243,14 +271,8 @@ function onReady() {
 
 				respond(texts.serviceFeeSet(hash, amount));
 			}},
-			{pattern: /.*/, action: async () => {
-				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
-				if (!current_arbiter)
-					respond(texts.greetings());
-				else {
-					current_arbiter.balance = await arbiters.getDepositBalance(current_arbiter.hash);
-					respond(texts.current_status(current_arbiter));
-				}
+			{pattern: /.*/, action: () => {
+				respond(texts.unrecognized_command());
 			}}
 		]);
 	});
@@ -268,9 +290,11 @@ function onReady() {
 				try {
 					let res = await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
+						change_address: row.service_fee_address,
+						fee_paying_wallet: [arbstoreFirstAddress],
 						to_address: row.deposit_address,
 						asset: conf.asset || "base",
-						send_all: true
+						amount: assocBalances[conf.asset || "base"].stable
 					});
 					let arbiter = await arbiters.getByAddress(row.arbiter_address);
 					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, assocBalances[conf.asset || "base"].stable, res.unit));
@@ -336,19 +360,17 @@ async function postAnnounceUnit(hash) {
 		payload_hash: objectHash.getBase64Hash(payload),
 		payload: payload
 	};
-	headlessWallet.readFirstAddress(async address => {
-		try {
-			let res = await headlessWallet.sendMultiPayment({
-				paying_addresses: [address],
-				messages: [objMessage],
-				change_address: address
-			});
-			db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [res.unit, arbiter.hash]);
-			device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(res.unit));
-		} catch(e) {
-			onError(`${e}`);
-		}
-	});
+	try {
+		let res = await headlessWallet.sendMultiPayment({
+			paying_addresses: [arbstoreFirstAddress],
+			messages: [objMessage],
+			change_address: arbstoreFirstAddress
+		});
+		db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [res.unit, arbiter.hash]);
+		device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(res.unit));
+	} catch(e) {
+		onError(`${e}`);
+	}
 }
 
 // deposit topup
@@ -357,7 +379,7 @@ eventBus.on('new_my_transactions', async arrUnits => {
 		`SELECT SUM(outputs.amount) as amount, hash
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
-		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address=arbiters.address -- only payments from arbiter address
+		JOIN unit_authors ON outputs.unit=unit_authors.unit AND unit_authors.address=arbiters.address -- only payments from arbiter address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY deposit_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
@@ -373,7 +395,7 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		`SELECT hash
 		FROM outputs
 		CROSS JOIN arbiters ON outputs.address=arbiters.deposit_address
-		JOIN inputs ON outputs.unit=inputs.unit AND inputs.address=arbiters.address -- only payments from arbiter address
+		JOIN unit_authors ON outputs.unit=unit_authors.unit AND unit_authors.address=arbiters.address -- only payments from arbiter address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY deposit_address`, [arrUnits, conf.asset]);
 	rows.forEach(async row => {
@@ -575,8 +597,9 @@ router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
 });
 let lastPairedAddress = '';
+let lastSecret = '';
 moderatorRouter.get('/checklogin', async ctx => {
-	if (!conf.ModeratorDeviceAddresses.includes(lastPairedAddress))
+	if (!conf.ModeratorDeviceAddresses.includes(lastPairedAddress) || decodeURIComponent(ctx.query['secret']) !== lastSecret)
 		return ctx.body='false';
 	ctx.cookies.set('address', encrypt(lastPairedAddress));
 	ctx.redirect('/moderator');
@@ -586,7 +609,7 @@ moderatorRouter.get('/pair', async ctx => {
 		return new Promise(resolve => device.startWaitingForPairing(resolve));
 	};
 	let pi = await waitForPairing();
-	await ctx.render('login', {pairing_code: `${pi.device_pubkey}@${pi.hub}#${pi.pairing_secret}`});
+	await ctx.render('login', {pairing_code: `${pi.device_pubkey}@${pi.hub}#${pi.pairing_secret}`, secret: pi.pairing_secret});
 });
 function checkLogin(ctx) {
 	let address = decrypt(ctx.cookies.get('address'));
@@ -637,10 +660,10 @@ moderatorRouter.post('/:hash', async ctx => {
 
 	if (action === 'approve') {
 		let loser = contract.winner_side === 1 ? contract.side2_address : contract.side1_address;
-
 		try {
 			let res = await headlessWallet.sendMultiPayment({
 				paying_addresses: [arbiter.deposit_address],
+				fee_paying_wallet: [arbstoreFirstAddress],
 				to_address: loser,
 				amount: 3*conf.AppealFeeAmount,
 				asset: conf.asset,
@@ -864,6 +887,9 @@ router.post('/api/appeal/new', async ctx => {
 
 router.all('/api/get_device_address', async ctx => {
 	ctx.body = `"${device.getMyDeviceAddress()}"`;
+});
+router.all('/api/get_appeal_fee', async ctx => {
+	ctx.body = JSON.stringify({amount: conf.AppealFeeAmount, asset: conf.asset});
 });
 
 app.use(router.routes());

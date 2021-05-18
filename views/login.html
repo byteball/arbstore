@@ -36,7 +36,7 @@
 <script type="text/javascript">
 $(document).ready(function() {
 	setInterval(function() {
-		$.get('/moderator/checklogin', function(data){
+		$.get('/moderator/checklogin?secret=<%= encodeURIComponent(secret) %>', function(data){
 			if (data != 'false')
 				window.location.href = '/moderator';
 		});

@@ -5,7 +5,9 @@ const constants = require('ocore/constants');
 
 exports.greetings = () => {
 	return `Hello, this bot can help you signup as an arbiter.
-To start, send me your address. Address should be attested through Real Name Attestation bot.`;
+To start, send me your address. Address should be attested through Real Name Attestation bot.
+
+For list of available commands type [help](command:help).`;
 };
 
 exports.not_attested = () => {
@@ -30,7 +32,7 @@ exports.topup_deposit = (amount, address) => {
 }
 
 exports.received_payment = (amount) => {
-	return `Received ${formatAmount(amount)} from you, please wait till it confirmed`;
+	return `Received ${formatAmount(amount)} from you, please wait till it is confirmed`;
 }
 
 exports.payment_confirmed = () => {
@@ -49,8 +51,8 @@ exports.signMessage = (user_address) => {
 	return `I'm going to register as arbiter with my address ${user_address}`;
 }
 
-exports.withdraw_completed = (unit, address) => {
-	return `Sent all funds from your deposit to address ${address}. https://explorer.obyte.org/#${unit}`;
+exports.withdraw_completed = (amount, unit, address) => {
+	return `Sent ${formatAmount(amount)} from your deposit to address ${address}. https://explorer.obyte.org/#${unit}`;
 }
 
 exports.already_announced = () => {
@@ -58,7 +60,7 @@ exports.already_announced = () => {
 }
 
 exports.serviceFeeSet = (hash, amount) => {
-	return `Your fee for resolving dispute on contract ${hash} is set to ${formatAmount(amount)}. Payment request is sent to plaintiff. We will notify you when payment is received.`;
+	return `Your fee for resolving the dispute on contract ${hash} is set to ${formatAmount(amount)}. A payment request was sent to the plaintiff. We will notify you when the payment is received.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
@@ -66,7 +68,7 @@ exports.payForArbiterService = (real_name, amount, address, pairing_code, commen
 }
 
 exports.service_fee_paid = (hash, amount) => {
-	return `We received a payment from plaintiff of total ${formatAmount(amount)} for contract ${hash}. Post your dispute resolution in the form of data feed with the name 'CONTRACT_${hash}' and value of winning side address`;
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. Resolve the dispute by clicking buttons in dispute view.`;
 }
 
 exports.service_fee_paid_plaintiff = (hash, amount) => {
@@ -78,7 +80,7 @@ exports.appeal_started = (title) => {
 }
 
 exports.payAppealFee = (amount, address) => {
-	return `Moderator is asking ${formatAmount(amount)} for their service of resolving your appeal. Please [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
+	return `Moderator is asking ${formatAmount(amount)} for their service of resolving your appeal. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
 }
 
 exports.appeal_fee_paid = (hash, title) => {
@@ -100,8 +102,17 @@ exports.appeal_resolved = (hash, title) => {
 exports.contract_completed = (hash) => {
 	return `Contract with hash ${hash} was completed by contract parties.`;
 }
+
 exports.service_fee_sent = (hash, amount, unit) => {
 	return `We deposited ${formatAmount(amount)} (minus fees) to your deposit address for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
+}
+
+exports.not_enough_funds = (amount) => {
+	return `You don't have enough funds to withdraw. Current deposit amount is ${formatAmount(amount)}`;
+}
+
+exports.unrecognized_command = () => {
+	return `Unrecognized command. For list of available commands type [help](command:help).`;
 }
 
 
@@ -109,22 +120,25 @@ exports.help = () => {
 	return `Available commands:
 [status](command:status) – your current status
 [help](command:help) - this text
-[edit_info](command:edit_info) - tdit your bio, specializations, other info (give me the web link!)
+[edit info](command:edit info) - edit your bio, specializations, other info (give me the web link!)
 [suspend](command:suspend) - shut down your listing from arbiters list
 [live](command:live) - resume your listing
-[withdraw](command:withdraw) - transfer all the funds from your deposit to your address, also stops the listing
+[withdraw](command:withdraw) - transfer the funds from your deposit to your address, leaving only minimal amount required
+[withdraw all](command:withdraw all) - transfer all the funds from your deposit to your address, also stops the listing
 [revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)`;
 };
 
 exports.current_status = (arbiter) => {
 	let text = 'For list of available commands, type [help](command:help)\n\n';
-	if (!arbiter.visible)
-		text += `You are currently invisible in arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n`;
-	text += `Your deposit balance is: ${formatAmount(arbiter.balance)}.\n`;
-	if (arbiter.balance < conf.min_deposit)
-		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add funds, type [revive](command:revive)\n`;
+	text += `Your deposit balance is: ${formatAmount(arbiter.balance)}.\n\n`;
 	if (!arbiter.enabled)
-		text += `You have been disabled by moderator. Contact the ArbStore to resolve it`;
+		text += `You have been disabled by moderator. Contact the ArbStore to resolve it\n\n`;
+	else if (!arbiter.visible)
+		text += `You are currently invisible in arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n\n`;
+	else if (arbiter.balance < conf.min_deposit)
+		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add funds, type [revive](command:revive)\n\n`;
+	else
+		text += `Your arbiter listing is active.`;
 	return text;
 };
 
@@ -144,7 +158,7 @@ function formatAmount(amount) {
 			return `${amount/1e9} GBB`;
 		if (exports.assetMetadata) {
 			let decimals = exports.assetMetadata.decimals || 0;
-			return `${(amount / Math.pow(10, decimals)).toLocaleString([], {maximumFractionDigits: decimals})} of ${exports.assetMetadata.name}`;
+			return `${(amount / Math.pow(10, decimals)).toLocaleString([], {maximumFractionDigits: decimals})} ${exports.assetMetadata.name}`;
 		}
 		return `${amount} of ${conf.asset}`
 	}
