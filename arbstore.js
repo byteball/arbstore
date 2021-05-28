@@ -285,10 +285,10 @@ function onReady() {
 			AND julianday('now') - julianday(wac.status_change_date) > -1`, []);
 		rows.forEach(row => {
 			balances.readOutputsBalance(row.service_fee_address, async (assocBalances) => {
-				if (!assocBalances[conf.asset || "base"] || assocBalances[conf.asset || "base"].stable == 0)
+				if (!assocBalances[conf.asset || "base"] || assocBalances[conf.asset || "base"].total == 0)
 					return;
 				try {
-					let amount = Math.round((1-conf.ArbStoreCut) * assocBalances[conf.asset || "base"].stable);
+					let amount = Math.round((1-conf.ArbStoreCut) * assocBalances[conf.asset || "base"].total);
 					let res = await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
 						change_address: row.service_fee_address,
@@ -307,7 +307,7 @@ function onReady() {
 						fee_paying_wallet: [arbstoreFirstAddress],
 						to_address: arbstoreFirstAddress,
 						asset: conf.asset || "base",
-						amount: Math.round(conf.ArbStoreCut * assocBalances[conf.asset || "base"].stable)
+						amount: assocBalances[conf.asset || "base"].total - amount
 					});
 				} catch (e) {
 					console.warn('error while trying to send payment to arbiter from address '+row.service_fee_address+', balance: ' + assocBalances[conf.asset || "base"].total)

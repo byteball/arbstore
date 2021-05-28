@@ -19,9 +19,7 @@ function create(address, device_address){
 }
 
 function updateAddress(address, device_address){
-	return new Promise((resolve) => {
-		db.query(`UPDATE arbiters SET address=? WHERE device_address=?`, [address, device_address], resolve);
-	});
+	db.query(`UPDATE arbiters SET address=? WHERE device_address=?`, [address, device_address]);
 }
 
 const select_arbiter_sql = `SELECT (fn.value || ' ' || ln.value) AS real_name,
@@ -105,7 +103,7 @@ function getDepositBalance(hash) {
 		let arbiter = await getByHash(hash);
 		balances.readOutputsBalance(arbiter.deposit_address, assocBalances => {
 			if (assocBalances[conf.asset || "base"])
-				resolve(assocBalances[conf.asset || "base"]["stable"]);
+				resolve(assocBalances[conf.asset || "base"]["total"]);
 			else
 				resolve(0);
 		});
