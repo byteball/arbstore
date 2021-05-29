@@ -243,7 +243,8 @@ function onReady() {
 				let contract = await contracts.get(hash);
 				if (!contract)
 					return respond(`incorrect contract hash`);
-				await contracts.updateField("service_fee", hash, amount);
+				if (contract.status !== 'dispute_requested')
+					return respond(`contract is not in dispute`);
 				let comment = lines.length > 2 ? lines[2].replace(/(.*)\[.*\]\(.*\)(.*)/g, "$1$2") : "";
 				// pair with plaintiff and send payment request
 				let matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
@@ -254,6 +255,7 @@ function onReady() {
 				var pairing_secret = matches[3];
 				if (pubkey.length !== 44)
 					return respond(`Invalid pubkey length`);
+				await contracts.updateField("service_fee", hash, amount);
 				device.addUnconfirmedCorrespondent(pubkey, hub, 'New', function(device_address){
 					last_plaintiff_device_address = device_address;
 					device.startWaitingForPairing(function(reversePairingInfo){

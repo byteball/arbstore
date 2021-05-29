@@ -68,7 +68,7 @@ exports.payForArbiterService = (real_name, amount, address, pairing_code, commen
 }
 
 exports.service_fee_paid = (hash, amount) => {
-	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. Resolve the dispute by clicking buttons in dispute view.`;
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. We will hold it until you resolve this dispute by clicking buttons in dispute view.`;
 }
 
 exports.service_fee_paid_plaintiff = (hash, amount) => {
