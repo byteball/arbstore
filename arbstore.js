@@ -604,7 +604,9 @@ app.use(bodyParser());
 
 router.get('/', async ctx => {
 	let arbiter_list = await arbiters.getAllVisible();
-	await ctx.render('index', {arbiter_list: arbiter_list});
+	const protocol = process.env.devnet ? 'obyte-dev:' : (process.env.testnet ? 'obyte-tn:' : 'obyte:');
+	const pairing_link = protocol + device.getMyDevicePubKey() + "@" + conf.hub + "#" + conf.permanent_pairing_secret;
+	await ctx.render('index', { arbiter_list: arbiter_list, pairing_link });
 });
 router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
