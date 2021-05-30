@@ -5,9 +5,9 @@ const constants = require('ocore/constants');
 
 exports.greetings = () => {
 	return `Hello, this bot can help you signup as an arbiter.
-To start, send me your address. Address should be attested through Real Name Attestation bot.
+To start, send me your address. The address should be attested through Real Name Attestation bot.
 
-For list of available commands type [help](command:help).`;
+For the list of available commands type [help](command:help).`;
 };
 
 exports.not_attested = () => {
@@ -24,15 +24,15 @@ exports.already_registered_from_different_address = () => {
 }
 
 exports.device_address_unknown = () => {
-	return "Your device is unknown. Please, register first";
+	return "Your device is unknown. Please register first";
 }
 
 exports.topup_deposit = (amount, address) => {
-	return `Now you need to topup your arbiter's deposit. Deposit acts a safeguard in case an appeal for your decision is raised and your decision will be deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
+	return `Now you need to topup your arbiter's deposit. The deposit serves as a safeguard in case an appeal to your decision is raised and your decision is deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
 }
 
 exports.received_payment = (amount) => {
-	return `Received ${formatAmount(amount)} from you, please wait till it is confirmed`;
+	return `Received ${formatAmount(amount)} from you, please wait till the payment is confirmed`;
 }
 
 exports.payment_confirmed = () => {
@@ -44,7 +44,7 @@ exports.request_pairing_code = () => {
 }
 
 exports.unit_posted = (unit) => {
-	return `Your announcement unit was posted into DAG: https://explorer.obyte.org/#${unit}\nYou are now set up.`
+	return `Your announcement unit was posted into DAG: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\nYou are now set up.`
 }
 
 exports.signMessage = (user_address) => {
@@ -52,11 +52,11 @@ exports.signMessage = (user_address) => {
 }
 
 exports.withdraw_completed = (amount, unit, address) => {
-	return `Sent ${formatAmount(amount)} from your deposit to address ${address}. https://explorer.obyte.org/#${unit}`;
+	return `Sent ${formatAmount(amount)} from your deposit to address ${address}. https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}`;
 }
 
 exports.already_announced = () => {
-	return `You were already announced as arbiter, no need to sign message again`;
+	return `You were already announced as arbiter, no need to sign the message again`;
 }
 
 exports.serviceFeeSet = (hash, amount) => {
@@ -64,11 +64,11 @@ exports.serviceFeeSet = (hash, amount) => {
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
-	return `${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
+	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
 }
 
 exports.service_fee_paid = (hash, amount) => {
-	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. We will hold it until you resolve this dispute by clicking buttons in dispute view.`;
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
 }
 
 exports.service_fee_paid_plaintiff = (hash, amount) => {
@@ -104,7 +104,7 @@ exports.contract_completed = (hash) => {
 }
 
 exports.service_fee_sent = (hash, amount, cut, unit) => {
-	return `We deposited ${formatAmount(amount)} to your deposit address (we charged the ${cut*100}% ArbStore cut from the money paid by plaintiff) for resolving contract ${hash}, unit: https://explorer.obyte.org/#${unit}`;	
+	return `We deposited ${formatAmount(amount)} to your deposit address (we charged the ${cut*100}% ArbStore cut from the money paid by plaintiff) for resolving contract ${hash}, unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}`;	
 }
 
 exports.not_enough_funds = (amount) => {
@@ -112,7 +112,7 @@ exports.not_enough_funds = (amount) => {
 }
 
 exports.unrecognized_command = () => {
-	return `Unrecognized command. For list of available commands type [help](command:help).`;
+	return `Unrecognized command. For the list of available commands type [help](command:help).`;
 }
 
 
@@ -129,14 +129,14 @@ exports.help = () => {
 };
 
 exports.current_status = (arbiter) => {
-	let text = 'For list of available commands, type [help](command:help)\n\n';
+	let text = 'For the list of available commands, type [help](command:help)\n\n';
 	text += `Your deposit balance is: ${formatAmount(arbiter.balance)}.\n\n`;
 	if (!arbiter.enabled)
 		text += `You have been disabled by moderator. Contact the ArbStore to resolve it\n\n`;
 	else if (!arbiter.visible)
-		text += `You are currently invisible in arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n\n`;
+		text += `You are currently invisible in the arbiters list. To change this, type [live](command:live) or [edit_info](command:edit_info).\n\n`;
 	else if (arbiter.balance < conf.min_deposit)
-		text += `Your listing is not showing in arbiters list, because you have not sufficient funds in your deposit. To add funds, type [revive](command:revive)\n\n`;
+		text += `Your listing is not showing in arbiters list because you don't have enough funds on your deposit. To add funds, type [revive](command:revive)\n\n`;
 	else
 		text += `Your arbiter listing is active.`;
 	return text;
