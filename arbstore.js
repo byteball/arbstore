@@ -60,7 +60,7 @@ function onReady() {
 		}
 		return new Promise(resolve => {
 			db.query(
-				`SELECT value FROM attested_fields WHERE address=? AND field='profile_hash'`, [address], resolve);
+				`SELECT value FROM attested_fields WHERE address=? AND field='profile_hash' AND attestor_address IN (?)`, [address, conf.trustedAttestorAddresses], resolve);
 		});
 	}
 

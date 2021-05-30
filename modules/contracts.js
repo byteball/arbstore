@@ -22,13 +22,11 @@ async function get(hash) {
 		row.side1_attested = false;
 		row.side2_attested = false;
 		if (conf.trustedAttestorAddresses && conf.trustedAttestorAddresses.length) {
-			let payloads = await db.query(`SELECT payload FROM messages
-				JOIN unit_authors USING(unit) WHERE address IN(?) AND app='attestation'`, [conf.trustedAttestorAddresses]);
-			payloads.forEach(payload => {
-				let json = JSON.parse(payload.payload);
-				if (json.address === row.side1_address)
+			let addresses = await db.query(`SELECT address FROM attestations WHERE attestor_address IN (?) AND address IN (?)`, [conf.trustedAttestorAddresses, [row.side1_address, row.side2_address]]);
+			addresses.forEach(address => {
+				if (address === row.side1_address)
 					row.side1_attested = true;
-				if (json.address === row.side2_address)
+				if (address === row.side2_address)
 					row.side2_attested = true;
 			});
 		}
