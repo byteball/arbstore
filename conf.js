@@ -48,7 +48,7 @@ exports.min_deposit = 3 * exports.AppealFeeAmount + (exports.asset === 'base' ||
 
 exports.ArbStoreCut = 0.1; //a cut taken from each arbiter's service payment in favor of ArbStore
 
-exports.trustedAttestorAddresses = process.env.devnet ? ['LJS2XD3M6XR4CBH44DQW7TCWYTYABTG4'] : (process.env.testnet ? [] : ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT', 'OHVQ2R5B6TUR5U7WJNYLP3FIOSR7VCED', 'JFKWGRMXP3KHUAFMF4SJZVDXFL6ACC6P']);
+exports.trustedAttestorAddresses = process.env.devnet ? ['LJS2XD3M6XR4CBH44DQW7TCWYTYABTG4'] : (process.env.testnet ? ['7JJMSQDS7VG2F5XO23BAUSA5IZ35XBCN'] : ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT', 'OHVQ2R5B6TUR5U7WJNYLP3FIOSR7VCED', 'JFKWGRMXP3KHUAFMF4SJZVDXFL6ACC6P']);
 
 // Tags
 exports.available_tags = [
