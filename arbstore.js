@@ -25,8 +25,14 @@ const app = new Koa();
 const views = require('koa-views');
 const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
+const serve = require('koa-static');
 const router = new KoaRouter();
 const moderatorRouter = new KoaRouter();
+app.use(serve(__dirname));
+app.use(async (ctx, next) => {
+	ctx.set('Access-Control-Allow-Origin', '*');
+	await next();
+});
 
 
 let available_languages = {};
@@ -419,7 +425,7 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 });
 
 // service fee paid
-eventBus.on('my_transactions_became_stable', async arrUnits => {
+eventBus.on('new_my_transactions', async arrUnits => {
 	let rows = await db.query(
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
