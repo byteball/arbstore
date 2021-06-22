@@ -425,7 +425,7 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 });
 
 // service fee paid
-eventBus.on('new_my_transactions', async arrUnits => {
+let serviceFeePaymentHandler = async (arrUnits, type) => {
 	let rows = await db.query(
 		`SELECT hash, SUM(outputs.amount) AS amount
 		FROM outputs
@@ -435,13 +435,19 @@ eventBus.on('new_my_transactions', async arrUnits => {
 	rows.forEach(async row => {
 		let contract = await contracts.get(row.hash);
 		if (contract.status !== "dispute_requested" || row.amount < contract.service_fee) return;
-		await contracts.updateStatus(contract.hash, "in_dispute");
 		let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 		let plaintiff_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
-	 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.service_fee_paid(contract.hash, row.amount));
-	 	device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, row.amount));
+		if (type === 'stable') {
+			await contracts.updateStatus(contract.hash, "in_dispute");
+		 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.service_fee_paid(contract.hash, row.amount));
+		 	device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_stabilized());
+		} else {
+			device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, row.amount));
+		}
 	});
-});
+};
+eventBus.on('new_my_transactions', arrUnits => {serviceFeePaymentHandler(arrUnits, 'new')});
+eventBus.on('my_transactions_became_stable', arrUnits => {serviceFeePaymentHandler(arrUnits, 'stable')});
 
 // appeal fee paid
 eventBus.on('my_transactions_became_stable', async arrUnits => {

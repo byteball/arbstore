@@ -72,7 +72,11 @@ exports.service_fee_paid = (hash, amount) => {
 }
 
 exports.service_fee_paid_plaintiff = (hash, amount) => {
-	return `We received a payment from you of total ${formatAmount(amount)} for contract ${hash}. Arbiter can now resolve this dispute.`;
+	return `We received a payment from you of total ${formatAmount(amount)} for contract ${hash}. Wait for it to stabilize.`;
+}
+
+exports.service_fee_stabilized = () => {
+	return 'Your payment is stabilized. Arbiter can now resolve this dispute.';
 }
 
 exports.appeal_started = (title) => {
