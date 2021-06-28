@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ArbStoreWeb</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- Inevitable thing -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+	<!-- multi-select plugin -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/css/select2.min.css" rel="stylesheet" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js"></script>
+
+	<!-- UIkit CSS -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/css/uikit.min.css" />
+
+	<!-- UIkit JS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+
+	<!-- Markdown -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.6/markdown-it.min.js" integrity="sha512-7U8vY7c6UQpBNQOnBg3xKX502NAckvk70H1nWvh6W7izA489jEz+RCN3ntT1VMdXewaSKkOrEBegp/h6SPXrjw==" crossorigin="anonymous"></script>
+
+	<!-- QR code -->
+	<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+
+	<style type="text/css">
+		.saved {
+			border-radius: 5px;
+		}
+		td {
+			cursor: pointer;
+		}
+		.arbiter {
+			cursor: pointer;
+		}
+		.arbiter:hover {
+			background-color: #F9F9F9;
+		}
+	</style>
+</head>
+<body>
+<nav class="uk-navbar-container">
+	<div class="uk-container" uk-navbar>
+		<div class="uk-navbar-left">
+			<a class="uk-navbar-item uk-logo" href="/">ArbStore</a>
+		</div>
+		<div class="uk-navbar-right">
+			<ul class="uk-navbar-nav">
+				<li><a href="/">Arbiters</a></li>
+				<li><a href="/userguide">User Guide</a></li>
+				<li><a href="https://developer.obyte.org/contracts/contracts-with-arbitration">Developer docs</a></li>
+			</ul>
+
+		</div>
+	</div>
+</nav>
