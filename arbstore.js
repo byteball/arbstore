@@ -27,16 +27,12 @@ const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const serve = require('koa-static');
 const router = new KoaRouter();
+const cors = require('@koa/cors');
 const mount = require('koa-mount');
 const moderatorRouter = new KoaRouter();
 
 app.use(mount('/assets/', serve(__dirname + '/assets')));
-app.use(async (ctx, next) => {
-	ctx.set('Access-Control-Allow-Origin', '*');
-	ctx.set('Access-Control-Allow-Headers', 'Content-Type');
-	ctx.set('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-	await next();
-});
+app.use(cors());
 
 
 let available_languages = {};
