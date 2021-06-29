@@ -640,7 +640,7 @@ moderatorRouter.get('/pair', async ctx => {
 		return new Promise(resolve => device.startWaitingForPairing(resolve));
 	};
 	let pi = await waitForPairing();
-	await ctx.render('login', {pairing_code: `${pi.device_pubkey}@${pi.hub}#${pi.pairing_secret}`, secret: pi.pairing_secret});
+	await ctx.render('login', {pairing_code: `${process.env.testnet ? 'obyte-tn' : 'obyte'}:${pi.device_pubkey}@${pi.hub}#${pi.pairing_secret}`, secret: pi.pairing_secret});
 });
 function checkLogin(ctx) {
 	let address = decrypt(ctx.cookies.get('address'));
