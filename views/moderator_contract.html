@@ -1,5 +1,5 @@
 <%- include('header.html') %>
-	<body class="uk-margin-large uk-container uk-margin-top">
+	<div class="uk-container">
 		<h2>Contract <%= contract.title %></h2>
 		<h4>Updated on <%= status_change_date %></h4>
 		<ul>
@@ -25,7 +25,8 @@
 			<li>Status: <span class="uk-text-<%= status == 'appeal_declined' ? 'danger' : 'success' %> %>"><%= status == 'appeal_declined' ? 'declined' : 'approved' %></span></li>
 		</ul>
 		<% } %>
-	</body>
+	</div>
+</body>
 <script type="text/javascript">
 $(document).ready(function() {
 	$('.decline,.approve').click(function(e){

@@ -1,5 +1,5 @@
 <%- include('header.html') %>
-	<body class="uk-margin-large uk-container uk-margin-top">
+	<div class="uk-container">
 		<h2>Arbiter <%= real_name %></h2>
 		<h4>Chat name - <%= device_name %></h4>
 		<ul>
@@ -23,7 +23,8 @@
 			<li>Last activity: <b><%= last_unit_date %></b></li>
 
 		</ul>
-	</body>
+	</div>
+</body>
 <script type="text/javascript">
 $(document).ready(function() {
 	$('.languages').select2();
