@@ -548,7 +548,7 @@ eventBus.on('mci_became_stable', async mci => {
 				let contract = await contracts.get(contract_hash);
 				if (!contract)
 					continue;
-				if (contract.status === 'in_dispute') {
+				if (contract.status === 'in_dispute' || contract.status === 'dispute_requested') {
 					await contracts.updateStatus(contract_hash, 'dispute_resolved');
 				}
 				let winner_address = m.payload[key];
