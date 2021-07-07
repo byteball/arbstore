@@ -1,11 +1,12 @@
 <%- include('header.html') %>
 	<div class="uk-container">
 		<h2>User guide for contracts with arbitration</h2>
-		<p>Every contract with arbitration has two sides of the contract: <b>offerer</b> and <b>acceptor</b>. One of them is a <b>buyer</b>, another one is <b>seller</b>. A third party in the form of <b>arbiter</b> can be called to resolve disputes. As a last resort, in some situations, an ArbStore <b>moderator</b> can step into play to compensate fees to dispute plaintiff, in case of arbiter desicion was wrong (from the plaintiff point of view) or the arbiter behavior was incorrect.</p>
+
+		<p>Countracts with artbitration are conventional written contracts coupled with smart contracts that lock the full amount of the contract for its entire duration and guarantee that the funds can be unlocked only with mutual agreement of both parties, or according to the decision of a mutually agreed arbiter in case a dispute arises.</p>
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>1. Pair with the person you want to enter into a contract in an Obyte wallet app by clicking "<b>Add a new device</b>" on Chat tab, then follow the instructions on your screen.</p>
+				<p>1. Pair with the person you want to make a contract with by clicking "<b>Add a new device</b>" in the Chat tab, then follow the instructions on your screen.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_pair.png" width="400" height="578" uk-img/>
@@ -14,8 +15,8 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>(OPTIONAL) You can attest your real name before starting the contract so your counterparty will see your attested real name during contract signing. Same works for the peer you going to step into agreement with, they can attest themselves too prior sending you their address.</p>
-				<p>Real Name attestation can be done via a <b>Real Name Attestation</b> bot found in a Bot Store (the second tab of your chat window). Add this bot and follow the instructions it sends to you.</p>
+				<p>(OPTIONAL) You can attest your real name before creating a contract, so it will show up on the contract and your counterparty will see it during contract signing. The same applies to your counterparty.</p>
+				<p>Real Name attestation can be done via a <b>Real Name Attestation</b> bot found in the Bot Store (the second tab of your chat window). Add this bot and follow its instructions.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_rna.png" width="400" height="578" uk-img/>
@@ -24,7 +25,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>(OPTIONAL) If you got attested, you can share your private profile to your peer so they can see your real name alongside the fact that you were attested.</p>
+				<p>(OPTIONAL) If you got attested, share your private profile with your peer so they can see it on the contract.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_profile.png" width="400" height="578" uk-img/>
@@ -33,7 +34,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>2. After chat dialog opens with the corresponding peer, <b>acceptor</b> sends to an <b>offerer</b> his address by clicking "<b>Insert my address</b>".</p>
+				<p>2. One of the parties opens chat with the other and shares their address by clicking "<b>Insert my address</b>".</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_insertaddress.png" width="400" height="578" uk-img/>
@@ -42,7 +43,7 @@
 		
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>3. Offerer then click on the received address and choose "<b>Offer contract with arbitration</b>".</p>
+				<p>3. The other party clicks the received address and chooses "<b>Offer contract with arbitration</b>" This party will be the <b>offerer</b> while the other party will be the <b>acceptor</b>.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_address.png" width="400" height="578" uk-img/>
@@ -51,9 +52,9 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>4. Offerer then fills the form.</p>
-				<p>4.1. First, they select the roles for them (<b>Buyer/Seller</b>), implicitly setting the opposite role for the other contract party.</p>
-				<p>4.2. Then enter the amount that buyer is gonna pay to the seller for their work. You can also select the asset in which the payment should be made. A good candidate for the asset can be the stablecoin (OUSDv2), that you need to obtain first from <a href="https://ostable.org">https://ostable.org</a>.</p>
+				<p>4. The offerer then fills out the contract offer.</p>
+				<p>4.1. First, they select the roles for themselves (<b>Buyer</b> or <b>Seller</b>) implicitly setting the opposite role for the other party.</p>
+				<p>4.2. Then they enter the amount that the buyer is going to pay to the seller for their goods or services. They also select the asset in which the payment will be made. A good candidate for the asset is a stablecoin (such as OUSDv2) that the buyer needs to obtain first from <a href="https://ostable.org">ostable.org</a>.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_role.png" width="400" height="578" uk-img/>
@@ -62,7 +63,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>4.3. Then pick the arbiter from this ArbStore. You can filter them by their specializations and compare prices for their services. Enter the addres of picked arbiter in the field.</p>
+				<p>4.3. Then, the offerer picks an arbiter from this (or another) ArbStore. You can filter them by their specializations, compare prices for their services, and their recent stats. Copy/paste the address of the chosen arbiter in the field. Discuss the arbiter candidate(s) with the other party to make sure they are OK with your choice.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_arbiter.png" width="400" height="578" uk-img/>
@@ -71,7 +72,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>4.4. Now fill in the contract title and text. Be sure that you mention the names and roles of both persons in the contract text, as in real world contracts.</p>
+				<p>4.4. Now fill in the contract title and text. Make sure that you mention the names and the roles of both parties in the contract body, like in real-world contracts. The contract text should be written in 3rd person, avoid "I" and "you" as otherwise the arbiter will have trouble identifying who is who if you have a dispute and the contract lands on the arbiter's desk. The text should be rather long and spell out all the terms and conditions, rights and obligations in your deal with the other party.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_text.png" width="400" height="578" uk-img/>
@@ -80,8 +81,8 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>4.5. You can also optionally provide your contact info, so both the peer and the arbiter can contact you through any messengers / phone / email, etc.</p>
-				<p>When you done, click "<b>Offer contract</b>" button to send the the contract to your peer for signing.</p>
+				<p>4.5. You can also optionally provide your contact info, so both the peer and the arbiter can contact you via messengers / phone / email, etc.</p>
+				<p>When done, click "<b>Offer contract</b>" button to send the contract to your peer for review and signing.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_contacts.png" width="400" height="578" uk-img/>
@@ -90,7 +91,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>5. Acceptor then receives this contract offer via chat, opens it and accepts the contract, optionally providing their contacts.</p>
+				<p>5. The other party (acceptor) then receives this contract offer via chat, opens and reviews it. They should check the amount of the contract, the currency, the arbiter, and the contract text. If they agree with everything, they accept the contract. Optionally, they can add their contacts for the other party and for the arbiter.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_accept.png" width="400" height="578" uk-img/>
@@ -99,7 +100,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>6. After accepting the contract, when offerer comes online, their wallet will post the unit into DAG with contract hash, as a public confirmation of an aggreement. <b>Acceptor needs to sign this unit</b>.</p>
+				<p>6. After the contract is accepted by the acceptor, and the offerer comes online again, their wallet will post a unit into the DAG with the hash of the contract text. <b>The acceptor needs to co-sign this unit</b>, their wallet will prompt them to do so if necessary. This hash signed by both parties serves as a confirmation of their agreement.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_sign.png" width="400" height="578" uk-img/>
@@ -108,7 +109,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>7. After unit was posted, buyer needs to top-up the contract with the amount specified in it by opening the contract in their wallet and clicking <b>Pay</b> button.</p>
+				<p>7. After the unit was posted, the buyer needs to pay to the contract by opening the contract in their wallet and clicking <b>Pay</b> button. This locks the money on the smart contract address associated with the contract.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_pay.png" width="400" height="578" uk-img/>
@@ -117,7 +118,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>8. After contract was paid, the seller can start fulfilling his contract obligations. After the work is done and the buyer is satisfied with the results, they can release the funds from the contract to the seller by clicking <b>"release funds"</b> button in the contract view. Success, contract is now completed.</p>
+				<p>8. After the contract was paid, the seller starts fulfilling their contract obligations. After the work is done and the buyer is satisfied with the results, they release the funds from the contract to the seller by clicking <b>"release funds"</b> button in the contract view. The contract is now completed.</p>
 				
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
@@ -127,7 +128,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>9. The <b>seller</b> side can cancel the contract at any time and return the funds back to the buyer by clicking the "<b>Refund</b>" button in their wallet.</p>
+				<p>9. If the <b>seller</b> is unable to fulfil their obligations, they can cancel the contract at any time and return the funds back to the buyer by clicking the "<b>Refund</b>" button in their wallet.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_refund.png" width="400" height="578" uk-img/>
@@ -136,7 +137,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>10. In case if some controversy happens during the work process and peers can't come to an agreement by themselves, any party of the contract can raise the dispute and call the arbiter by clicking <b>open dispute</b> link.</p>
+				<p>10. In case there is a disagreement about the contract performance and the parties can't resolve it themselves, any party can start a dispute and invoke the arbiter by clicking the <b>open dispute</b> link.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_dispute.png" width="400" height="578" uk-img/>
@@ -145,9 +146,9 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>11. After the dispute link was clicked, the Arbiter selected in the contract will ask the plaintiff to pay for his service first. The payment is done through ArbStore of the arbiter, the plaintiff will receive a payment request from the ArbStore in chat.</p>
-				<p>After the payment is sent, Arbiter can start resolving the dispute. During that, arbiter will pair with both contract parties to collect details and evidencies from both peers to come to a conclusion which party of the contract has the rights to claim the funds from the contract.
-				Arbiter posts a specially crafted unit into DAG which allows the winning party to claim funds to his own address.</p>
+				<p>11. After the "open dispute" link was clicked, the arbiter selected in the contract will automatically receive the contract text, briefly review it, and based on the contract's complexity will estimate the cost of their service and ask the plaintiff to pay for it. The payment is processed through the ArbStore this arbiter is enrolled with, so the plaintiff will receive a payment request from the ArbStore in chat. The payment will be held by the ArbStore until the arbiter makes a decision.</p>
+				<p>After the payment is sent, the arbiter starts resolving the dispute. They will contact both parties through Obyte wallet chat or other means of communication they indicated in the contract, collect evidence from both parties, and make a decision about the party who wins the dispute.</p>
+				<p>The arbiter then posts a specially crafted unit into the DAG which allows the winning party to claim the funds locked on the contract.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_servicefee.png" width="400" height="578" uk-img/>
@@ -156,7 +157,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>12. If arbiter closed the dispute in your favor, you will be notified about it in chat and can now claim funds from the contract by clicking "<b>Claim funds</b>" button in the contract view.</p>
+				<p>12. If the arbiter decides the dispute in your favor, you will be notified about this in chat and can now claim funds from the contract by clicking "<b>Claim funds</b>" button in the contract view.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_claim.png" width="400" height="578" uk-img/>
@@ -165,7 +166,7 @@
 
 		<div class="uk-flex-middle" uk-grid>
 			<div class="uk-width-2-3@m">
-				<p>13. If any of the contract parties is not satisfied with the outcome of arbiter's actions, they can appeal to their decision through contract view. This action will invoke ArbStore moderator that will look into arbiter's decision and can either agree with them and close the appeal, or compensate the losing side some bonus for incorrect arbiter decision.</p>
+				<p>13. If the losing party is not satisfied with the arbiter's work, they can appeal the arbiter's decision through contract view. This action will invoke an ArbStore moderator. Although the moderator can't reverse the arbiter decision, they can (partially) compensate the appellant if they find that the arbiter's work was unsatisfactory. The moderator will take a payment for their work and look into the arbiter's decision. They can either agree with the arbiter and close the appeal, or agree with the appellant and pay them a fixed compensation out of the arbiter's deposit with the ArbStore.</p>
 			</div>
 			<div class="uk-width-1-3@m uk-flex-first">
 				<img data-src="./assets/userguide_appeal.png" width="400" height="578" uk-img/>
