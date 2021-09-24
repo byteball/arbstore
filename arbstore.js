@@ -574,6 +574,26 @@ eventBus.on('mci_became_stable', async mci => {
 	});
 });
 
+// arbiter appeal stats
+eventBus.on('mci_became_stable', async mci => {
+	let rows = await db.query(
+		`SELECT payload
+		FROM messages
+		JOIN unit_authors USING(unit)
+		JOIN units USING(unit)
+		WHERE main_chain_index=? AND payload IS NOT NULL AND address IN (?)`, [mci, conf.ArbStoreAddresses.concat([arbstoreFirstAddress])]);
+	rows.forEach(async row => {
+		const data = JSON.parse(row.payload);
+		if (data.appealed != true || !data.arbiter_address)
+			return;
+		let arRows = await db.query(`SELECT reputation FROM arbstore_arbiters_reputation WHERE arbiter_address=?`, [data.arbiter_address]);
+		if (arRows.length)
+			await db.query(`UPDATE arbstore_arbiters_reputation SET reputation = reputation-1 WHERE arbiter_address=?`, [data.arbiter_address]);
+		else
+			await db.query(`INSERT INTO arbstore_arbiters_reputation (arbiter_address, reputation) VALUES (?, ?)`, [data.arbiter_address, -1]);
+	});
+});
+
 function encrypt(text){
 	let cipher = crypto.createCipher('aes-256-ctr', conf.WebTokenSalt);
 	let crypted = cipher.update(text, 'utf8', 'hex');
@@ -700,6 +720,22 @@ moderatorRouter.post('/:hash', async ctx => {
 				asset: conf.asset,
 				change_address: arbiter.deposit_address,
 				recipient_device_address: appellant_device_address
+			});
+			// decrease arbiter reputation
+			let payload = {
+				arbiter_address: arbiter.address,
+				appealed: true
+			};
+			let objMessage = {
+				app: "data",
+				payload_location: "inline",
+				payload_hash: objectHash.getBase64Hash(payload),
+				payload: payload
+			};
+			res = await headlessWallet.sendMultiPayment({
+				paying_addresses: [arbstoreFirstAddress],
+				messages: [objMessage],
+				change_address: arbstoreFirstAddress
 			});
 			device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_resolved_arbiter(contract.hash, contract.contract.title, 3*conf.AppealFeeAmount));
 			ctx.body = 'ok';

@@ -36,3 +36,9 @@ CREATE TABLE IF NOT EXISTS arbstore_arbiter_contracts (
 	FOREIGN KEY (arbiter_address) REFERENCES arbiters(address),
 	FOREIGN KEY (unit) REFERENCES units(unit)
 );
+
+-- query separator
+CREATE TABLE IF NOT EXISTS arbstore_arbiters_reputation (
+	arbiter_address CHAR(32) NOT NULL PRIMARY KEY,
+	reputation INT NOT NULL
+);

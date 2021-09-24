@@ -117,6 +117,7 @@ async function getAllVisible() {
 		tc.total_cnt,
 		rc.resolved_cnt,
 		rc.last_resolve_date,
+		rep.reputation,
 		MAX(latest_units.creation_date) AS last_unit_date,
 			(SELECT SUM(amount) FROM outputs 
 			JOIN units USING(unit) 
@@ -124,7 +125,7 @@ async function getAllVisible() {
 		FROM arbiters
 
 		LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbstore_arbiter_contracts GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
-		LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
+		LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status IN ('dispute_resolved', 'appeal_requested', 'in_appeal', 'appeal_declined', 'appeal_approved') GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
 
 		LEFT JOIN unit_authors AS latest_unit_authors ON arbiters.address=latest_unit_authors.address
 		LEFT JOIN units AS latest_units ON latest_units.unit=latest_unit_authors.unit
@@ -132,6 +133,8 @@ async function getAllVisible() {
 		LEFT JOIN private_profiles USING(address)
 		LEFT JOIN private_profile_fields AS fn ON fn.private_profile_id=private_profiles.private_profile_id AND fn.field='first_name'
 		LEFT JOIN private_profile_fields AS ln ON ln.private_profile_id=private_profiles.private_profile_id AND ln.field='last_name'
+
+		LEFT JOIN arbstore_arbiters_reputation AS rep ON arbiters.address=rep.arbiter_address
 		
 		WHERE enabled=1 AND visible=1 AND balance >= ?
 		GROUP BY arbiters.deposit_address

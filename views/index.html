@@ -14,7 +14,7 @@
 						<th class="uk-width-small">Real Name</th>
 						<th>Address</th>
 						<th>Bio</th>
-						<th>№ Cases Resolved / Cases arbiter was picked</th>
+						<th>Cases resolved / Cases arbiter was picked / Desicion was appealed</th>
 						<th>Last Case Resolved</th>
 						<th>Last Activity</th>
 					</tr>
@@ -25,7 +25,7 @@
 							<td><%= arbiter.real_name %></td>
 							<td><%= arbiter.address %></td>
 							<td><%= arbiter.info.bio %></td>
-							<td><%= arbiter.resolved_cnt %> / <%= arbiter.resolved_cnt %></td>
+							<td><%= arbiter.resolved_cnt %> / <%= arbiter.total_cnt %> / <%= -arbiter.reputation %></td>
 							<td><%= arbiter.last_resolve_date %></td>
 							<td><%= arbiter.last_unit_date %></td>
 						</tr>

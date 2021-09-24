@@ -58,3 +58,6 @@ exports.available_tags = [
 	'Real estate'
 ];
 
+// Arbiters reputation to be pulled from other arbstores, place it addresses here
+exports.ArbStoreAddresses = [];
+
