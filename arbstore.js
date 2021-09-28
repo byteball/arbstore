@@ -1005,6 +1005,10 @@ apiRouter.get('/languages', ctx => {
 apiRouter.get('/tags', ctx => {
 	ctx.body = conf.available_tags;
 })
+apiRouter.get('/pairing_link', ctx => {
+	const protocol = process.env.devnet ? 'obyte-dev:' : (process.env.testnet ? 'obyte-tn:' : 'obyte:');
+	ctx.body = {pairing_link: protocol + device.getMyDevicePubKey() + "@" + conf.hub + "#" + conf.permanent_pairing_secret};
+})
 apiRouter.use(router.routes());
 
 // Mount all routes
