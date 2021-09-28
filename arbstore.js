@@ -29,7 +29,9 @@ const serve = require('koa-static');
 const router = new KoaRouter();
 const cors = require('@koa/cors');
 const mount = require('koa-mount');
-const moderatorRouter = new KoaRouter();
+const moderatorRouter = new KoaRouter({prefix: '/moderator'});
+const apiRouter = new KoaRouter();
+const walletApiRouter = new KoaRouter({prefix: '/api'});
 
 app.use(mount('/assets/', serve(__dirname + '/assets')));
 app.use(cors());
@@ -634,11 +636,23 @@ app.use(views(__dirname + '/views', {
 }));
 app.use(bodyParser());
 
+// ArbStore Web routes
 router.get('/', async ctx => {
 	let arbiter_list = await arbiters.getAllVisible();
 	const protocol = process.env.devnet ? 'obyte-dev:' : (process.env.testnet ? 'obyte-tn:' : 'obyte:');
 	const pairing_link = protocol + device.getMyDevicePubKey() + "@" + conf.hub + "#" + conf.permanent_pairing_secret;
-	await ctx.render('index', { arbiter_list: arbiter_list, pairing_link });
+	if (ctx.useJSON){
+		let arbiters = [];
+		arbiter_list.forEach(a => {
+			const {balance: _skip1, ...cleanArbiter} = a;
+			const {pairing_code: _skip2, ...cleanInfo} = a.info;
+			cleanArbiter.info = cleanInfo;
+			arbiters.push(cleanArbiter);
+		});
+		ctx.body =  arbiters;
+	} else {
+		await ctx.render('index', { arbiter_list: arbiter_list, pairing_link });
+	}
 });
 router.get('/thankyou.html', async ctx => {
 	await ctx.render('thankyou');
@@ -646,7 +660,127 @@ router.get('/thankyou.html', async ctx => {
 router.get('/userguide', async ctx => {
 	await ctx.render('userguide');
 });
+router.get('/arbiter/:hash', async ctx => {
+	let hash = ctx.params['hash'];
+	if (!hash)
+		ctx.throw(404);
+	let arbiter;
+	if (hash.length === 16)
+		arbiter = await arbiters.getByHash(hash);
+	else 
+		arbiter = await arbiters.getByAddress(hash);
+	if (!arbiter)
+		ctx.throw(404, `hash not found`);
+	
+	if (ctx.useJSON){
+		ctx.body = _.pick(arbiter, [
+			'hash',
+			'real_name',
+			'device_name',
+			'address',
+			'creation_date',
+			'last_unit_date',
+			'last_resolve_date',
+			'visible',
+			'total_cnt',
+			'resolved_cnt',
+			'reputation',
+			'info'
+		]);
+		const { pairing_code: _skip, ...cleanInfo} = ctx.body.info;
+		ctx.body.info = cleanInfo;
+	}
+	else {
+		arbiter.available_languages = available_languages;
+		await ctx.render('arbiter', arbiter);
+	}
+});
+router.get('/:token', async ctx => {
+	let token = ctx.params['token'];
+	if (!token)
+		ctx.throw(404);
+	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
+	if (!hash)
+		ctx.throw(404, `invalid token`);
+	let arbiter = await arbiters.getByHash(hash);
+	if (!arbiter)
+		ctx.throw(404, `hash not found`);
+	
+	ctx.cookies.set('hash', arbiter.hash);
 
+	arbiter.error = ctx.query.error;
+	arbiter.success = ctx.query.success;
+	if (ctx.useJSON){
+		ctx.body = arbiter;
+	}
+	else {
+		arbiter.available_tags = conf.available_tags;
+		arbiter.available_languages = available_languages;
+		await ctx.render('edit_arbiter', arbiter);
+	}
+});
+router.post('/:token', async ctx => {
+	let token = ctx.params['token'];
+	if (!token)
+		ctx.throw(404);
+	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
+	if (!hash)
+		ctx.throw(404, `invalid token`);
+	let error;
+	let is_new_arbiter = true;
+	try {
+		let body = ctx.request.body;
+		if (!body.bio)
+			throw(`Bio is missing`);
+
+		let tags = {};
+		for (let key in body) {
+			let value = body[key];
+			let matches = key.match(/^tag-(\d)$/);
+			let idx = matches ? matches[1] : null;
+			if (idx && value === "on") {
+				let price_tag = body[`price-tag-${idx}`];
+				if (!price_tag)
+					throw(`no price for specialization: ${conf.available_tags[idx|0]}`);
+				tags[conf.available_tags[idx|0]] = price_tag;
+			}
+		}
+		if (Object.keys(tags).length === 0)
+			throw(`Pick at least one specialization`);
+
+		let languages = [];
+		body.languages.forEach(l => {
+			if (available_languages[l])
+				languages.push(l);
+		});
+		if (languages.length === 0)
+			throw(`Pick at least one language`);
+
+		const info = {
+			"bio": body.bio,
+			"contact_info": body.contact_info,
+			"tags": tags,
+			"languages": languages
+		}
+		let current_arbiter = await arbiters.getByHash(hash);
+		
+		if (current_arbiter.info.bio)
+			is_new_arbiter = false; // just updating info, skjp following steps
+
+		Object.assign(current_arbiter.info, info);
+		arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, !!body.visible);
+	} catch (e) {
+		error = e;
+	} finally {
+		if (!error && is_new_arbiter) {
+			checkDeposit(hash);
+			return ctx.redirect(`/thankyou.html`);
+		}
+		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
+	}
+});
+
+// ArbStore Moderator Web routes
 let lastPairedAddress = '';
 let lastSecret = '';
 moderatorRouter.get('/checklogin', async ctx => {
@@ -758,105 +892,9 @@ moderatorRouter.post('/:hash', async ctx => {
 
 	await ctx.render('moderator_contract', contract);
 });
-router.use('/moderator', moderatorRouter.routes());
-router.get('/arbiter/:hash', async ctx => {
-	let hash = ctx.params['hash'];
-	if (!hash)
-		ctx.throw(404);
-	let arbiter;
-	if (hash.length === 16)
-		arbiter = await arbiters.getByHash(hash);
-	else 
-		arbiter = await arbiters.getByAddress(hash);
-	if (!arbiter)
-		ctx.throw(404, `hash not found`);
-	
-	arbiter.available_languages = available_languages;
-	await ctx.render('arbiter', arbiter);
-});
-router.get('/:token', async ctx => {
-	let token = ctx.params['token'];
-	if (!token)
-		ctx.throw(404);
-	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
-	if (!hash)
-		ctx.throw(404, `invalid token`);
-	let arbiter = await arbiters.getByHash(hash);
-	if (!arbiter)
-		ctx.throw(404, `hash not found`);
-	
-	ctx.cookies.set('hash', arbiter.hash);
 
-	arbiter.available_tags = conf.available_tags;
-	arbiter.available_languages = available_languages;
-	arbiter.error = ctx.query.error;
-	arbiter.success = ctx.query.success;
-
-	await ctx.render('edit_arbiter', arbiter);
-});
-router.post('/:token', async ctx => {
-	let token = ctx.params['token'];
-	if (!token)
-		ctx.throw(404);
-	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
-	if (!hash)
-		ctx.throw(404, `invalid token`);
-	let error;
-	let is_new_arbiter = true;
-	try {
-		let body = ctx.request.body;
-		if (!body.bio)
-			throw(`Bio is missing`);
-
-		let tags = {};
-		for (let key in body) {
-			let value = body[key];
-			let matches = key.match(/^tag-(\d)$/);
-			let idx = matches ? matches[1] : null;
-			if (idx && value === "on") {
-				let price_tag = body[`price-tag-${idx}`];
-				if (!price_tag)
-					throw(`no price for specialization: ${conf.available_tags[idx|0]}`);
-				tags[conf.available_tags[idx|0]] = price_tag;
-			}
-		}
-		if (Object.keys(tags).length === 0)
-			throw(`Pick at least one specialization`);
-
-		let languages = [];
-		body.languages.forEach(l => {
-			if (available_languages[l])
-				languages.push(l);
-		});
-		if (languages.length === 0)
-			throw(`Pick at least one language`);
-
-		const info = {
-			"bio": body.bio,
-			"contact_info": body.contact_info,
-			"tags": tags,
-			"languages": languages
-		}
-		let current_arbiter = await arbiters.getByHash(hash);
-		
-		if (current_arbiter.info.bio)
-			is_new_arbiter = false; // just updating info, skjp following steps
-
-		Object.assign(current_arbiter.info, info);
-		arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, !!body.visible);
-	} catch (e) {
-		error = e;
-	} finally {
-		if (!error && is_new_arbiter) {
-			checkDeposit(hash);
-			return ctx.redirect(`/thankyou.html`);
-		}
-		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
-	}
-
-});
-
-router.get('/api/arbiter/:address', async ctx => {
+// Obyte Wallet routes
+walletApiRouter.get('/arbiter/:address', async ctx => {
 	let address = ctx.params['address'];
 	if (!address)
 		return ctx.throw(404);
@@ -866,7 +904,7 @@ router.get('/api/arbiter/:address', async ctx => {
 	ctx.body = {real_name: arbiter.real_name, device_pub_key: arbiter.info.pairing_code.split('@')[0]};
 });
 
-router.post('/api/dispute/new', async ctx => {
+walletApiRouter.post('/dispute/new', async ctx => {
 	let request = ctx.request.body;
 	if (!request.contract_hash || !request.my_address || !request.peer_address || typeof request.me_is_payer === "undefined" || !request.my_pairing_code || !request.peer_pairing_code || !request.encrypted_contract || !request.unit)
 		return ctx.throw(404, `{"error": "not all fields present"}`);
@@ -904,7 +942,7 @@ router.post('/api/dispute/new', async ctx => {
 	ctx.body = `"ok"`;
 });
 
-router.post('/api/appeal/new', async ctx => {
+walletApiRouter.post('/appeal/new', async ctx => {
 	let request = ctx.request.body;
 	if (!request.contract_hash || !request.my_pairing_code || !request.my_address || !request.contract || !request.contract.title || !request.contract.text)
 		return ctx.throw(404, `{"error": "not all fields present"}`);
@@ -952,13 +990,28 @@ router.post('/api/appeal/new', async ctx => {
 	ctx.body = `"ok"`;
 });
 
-router.all('/api/get_device_address', async ctx => {
+walletApiRouter.all('/get_device_address', async ctx => {
 	ctx.body = `"${device.getMyDeviceAddress()}"`;
 });
-router.all('/api/get_appeal_fee', async ctx => {
+walletApiRouter.all('/get_appeal_fee', async ctx => {
 	ctx.body = JSON.stringify({amount: conf.AppealFeeAmount, asset: conf.asset});
 });
 
+// ArbStore Web JSON API
+apiRouter.use(async (ctx, next) => {ctx.useJSON = true;await next()});
+apiRouter.get('/languages', ctx => {
+	ctx.body = available_languages;
+})
+apiRouter.get('/tags', ctx => {
+	ctx.body = conf.available_tags;
+})
+apiRouter.use(router.routes());
+
+// Mount all routes
+
+app.use(mount('/api/v1', apiRouter.routes()));
+app.use(walletApiRouter.routes());
+app.use(moderatorRouter.routes());
 app.use(router.routes());
 
 app.listen(conf.ArbStoreWebPort, () => console.log(`ArbStoreWeb listening on port ${conf.ArbStoreWebPort}!`));

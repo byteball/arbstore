@@ -29,8 +29,11 @@ const select_arbiter_sql = `SELECT (fn.value || ' ' || ln.value) AS real_name,
 		arbiters.info, 
 		arbiters.announce_unit, 
 		cd.name AS device_name,
-		MAX(latest_units.creation_date) AS last_unit_date,
-		rc.resolved_cnt
+		tc.total_cnt,
+		rc.resolved_cnt,
+		rc.last_resolve_date,
+		rep.reputation,
+		MAX(latest_units.creation_date) AS last_unit_date
 	FROM arbiters 
 
 	JOIN correspondent_devices AS cd USING (device_address)
@@ -42,7 +45,9 @@ const select_arbiter_sql = `SELECT (fn.value || ' ' || ln.value) AS real_name,
 	LEFT JOIN private_profile_fields AS fn ON fn.private_profile_id=private_profiles.private_profile_id AND fn.field='first_name'
 	LEFT JOIN private_profile_fields AS ln ON ln.private_profile_id=private_profiles.private_profile_id AND ln.field='last_name'
 
-	LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status='dispute_resolved' GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
+	LEFT JOIN (SELECT arbiter_address, COUNT(1) AS total_cnt FROM arbstore_arbiter_contracts GROUP BY arbiter_address) AS tc ON tc.arbiter_address=arbiters.address
+	LEFT JOIN (SELECT arbiter_address, COUNT(1) AS resolved_cnt, MAX(status_change_date) AS last_resolve_date FROM arbstore_arbiter_contracts WHERE status IN ('dispute_resolved', 'appeal_requested', 'in_appeal', 'appeal_declined', 'appeal_approved') GROUP BY arbiter_address) AS rc ON rc.arbiter_address=arbiters.address
+	LEFT JOIN arbstore_arbiters_reputation AS rep ON arbiters.address=rep.arbiter_address
 `;
 
 async function getByAddress(address) {
