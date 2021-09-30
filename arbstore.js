@@ -660,6 +660,9 @@ router.get('/thankyou.html', async ctx => {
 router.get('/userguide', async ctx => {
 	await ctx.render('userguide');
 });
+router.get('/arbiterguide', async ctx => {
+	await ctx.render('arbiterguide');
+});
 router.get('/arbiter/:hash', async ctx => {
 	let hash = ctx.params['hash'];
 	if (!hash)
