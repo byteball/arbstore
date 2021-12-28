@@ -4,24 +4,29 @@
   "description": "Arbiter Store for Obyte",
   "main": "arbstore.js",
   "scripts": {
+    "start": "node arbstore.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "tony",
   "license": "MIT",
   "dependencies": {
+    "@koa/cors": "^3.1.0",
+    "@koa/multer": "^3.0.0",
     "ejs": "^2.6.2",
     "headless-obyte": "git+https://github.com/byteball/headless-obyte.git",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0",
     "koa-mount": "^4.0.0",
+    "koa-router": "^7.4.0",
     "koa-static": "^5.0.0",
     "koa-views": "^6.2.0",
-    "@koa/cors": "^3.1.0",
     "lodash": "^4.17.15",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "multer": "^1.4.4",
+    "sharp": "^0.29.3"
   },
   "resolutions": {
-    "level-rocksdb": "^4.0.0"
+    "moment": "npm:dayjs",
+    "ocore": "git+https://github.com/kakysha/ocore.git#upgrade-nwjs"
   }
 }

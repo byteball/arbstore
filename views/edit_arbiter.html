@@ -1,13 +1,23 @@
 <%- include('header.html') %>
 	<div class="uk-container">
-		<form class="uk-form-horizontal uk-margin-large uk-container uk-margin-top" method="POST">
+		<form class="uk-form-horizontal uk-margin-large uk-container uk-margin-top" method="POST" enctype="multipart/form-data">
 
 			<h2>Update Arbiter <%= device_name %></h2>
+
+			<input type="file" name="photo" />
+			<img src="assets/uploads/<%= hash %>.jpeg"/>
 
 			<div class="uk-margin">
 				<label class="uk-form-label" for="form-horizontal-text">Visible</label>
 				<div class="uk-form-controls">
 					<input name="visible" class="uk-checkbox" type="checkbox" <%= visible ? 'checked' : '' %>>
+				</div>
+			</div>
+
+			<div class="uk-margin">
+				<label class="uk-form-label" for="form-horizontal-text">Short Bio</label>
+				<div class="uk-form-controls">
+					<textarea name="short_bio" class="uk-textarea" rows="5" placeholder="One short line about yourself..." required><%= info.short_bio %></textarea>
 				</div>
 			</div>
 

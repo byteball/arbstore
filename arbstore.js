@@ -25,6 +25,7 @@ const app = new Koa();
 const views = require('koa-views');
 const KoaRouter = require('koa-router');
 const bodyParser = require('koa-bodyparser');
+const multer = require('@koa/multer');
 const serve = require('koa-static');
 const router = new KoaRouter();
 const cors = require('@koa/cors');
@@ -32,8 +33,10 @@ const mount = require('koa-mount');
 const moderatorRouter = new KoaRouter({prefix: '/moderator'});
 const apiRouter = new KoaRouter();
 const walletApiRouter = new KoaRouter({prefix: '/api'});
+const sharp = require('sharp');
 
 app.use(mount('/assets/', serve(__dirname + '/assets')));
+const upload = multer();
 app.use(cors());
 
 
@@ -722,7 +725,7 @@ router.get('/:token', async ctx => {
 		await ctx.render('edit_arbiter', arbiter);
 	}
 });
-router.post('/:token', async ctx => {
+router.post('/:token', upload.single('photo'), async ctx => {
 	let token = ctx.params['token'];
 	if (!token)
 		ctx.throw(404);
@@ -732,6 +735,7 @@ router.post('/:token', async ctx => {
 	let error;
 	let is_new_arbiter = true;
 	try {
+		console.log(ctx.request.body);
 		let body = ctx.request.body;
 		if (!body.bio)
 			throw(`Bio is missing`);
@@ -759,13 +763,22 @@ router.post('/:token', async ctx => {
 		if (languages.length === 0)
 			throw(`Pick at least one language`);
 
+		let current_arbiter = await arbiters.getByHash(hash);
+
+		// resize photo
+		const dir = 'assets/uploads';
+		if (!fs.existsSync(dir)){
+			fs.mkdirSync(dir);
+		}
+		sharp(ctx.request.file.buffer).resize(200, 200).jpeg({ mozjpeg: true }).toFile(`${dir}/${current_arbiter.hash}.jpeg`);
+
 		const info = {
+			"short_bio": body.short_bio,
 			"bio": body.bio,
 			"contact_info": body.contact_info,
 			"tags": tags,
 			"languages": languages
 		}
-		let current_arbiter = await arbiters.getByHash(hash);
 		
 		if (current_arbiter.info.bio)
 			is_new_arbiter = false; // just updating info, skjp following steps
