@@ -756,6 +756,8 @@ router.post('/:token', upload.single('photo'), async ctx => {
 			throw(`Pick at least one specialization`);
 
 		let languages = [];
+		if (!Array.isArray(body.languages))
+			body.languages = [];
 		body.languages.forEach(l => {
 			if (available_languages[l])
 				languages.push(l);
@@ -766,11 +768,13 @@ router.post('/:token', upload.single('photo'), async ctx => {
 		let current_arbiter = await arbiters.getByHash(hash);
 
 		// resize photo
-		const dir = 'assets/uploads';
-		if (!fs.existsSync(dir)){
-			fs.mkdirSync(dir);
+		if (ctx.request.file) {
+			const dir = 'assets/uploads';
+			if (!fs.existsSync(dir)){
+				fs.mkdirSync(dir);
+			}
+			sharp(ctx.request.file.buffer).resize(200, 200).jpeg({ mozjpeg: true }).toFile(`${dir}/${current_arbiter.hash}.jpeg`);
 		}
-		sharp(ctx.request.file.buffer).resize(200, 200).jpeg({ mozjpeg: true }).toFile(`${dir}/${current_arbiter.hash}.jpeg`);
 
 		const info = {
 			"short_bio": body.short_bio,
