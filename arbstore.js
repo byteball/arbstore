@@ -162,7 +162,7 @@ function onReady() {
 						respond(`Profile of ${assocPrivateData.first_name} ${assocPrivateData.last_name} saved`);
 					});
 				}
-				let token = respond(`Now complete your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`);
+				let token = respond(`Now complete your arbiter profile here: ${conf.ArbStoreWebURI}edit/${encryptWebToken(current_arbiter.hash)}`);
 			}},
 			{pattern: /^([\w\/+]+)@([\w.:\/-]+)#(.+)$/, action: async matches => { // pairing code
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
@@ -191,7 +191,7 @@ function onReady() {
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
 				if (!current_arbiter)
 					return respond(texts.device_address_unknown());
-				respond(`Edit your arbiter profile here: ${conf.ArbStoreWebURI}${encryptWebToken(current_arbiter.hash)}`)
+				respond(`Edit your arbiter profile here: ${conf.ArbStoreWebURI}edit/${encryptWebToken(current_arbiter.hash)}`)
 			}},
 			{pattern: /^suspend$/, action: async () => {
 				let current_arbiter = await arbiters.getByDeviceAddress(from_address);
@@ -785,7 +785,7 @@ router.post('/:token', upload.single('photo'), async ctx => {
 		}
 		
 		if (current_arbiter.info.bio)
-			is_new_arbiter = false; // just updating info, skjp following steps
+			is_new_arbiter = false; // just updating info, skip following steps
 
 		Object.assign(current_arbiter.info, info);
 		arbiters.updateInfo(current_arbiter.hash, current_arbiter.info, !!body.visible);
