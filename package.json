@@ -27,6 +27,7 @@
   },
   "resolutions": {
     "moment": "npm:dayjs",
-    "ocore": "git+https://github.com/kakysha/ocore.git#upgrade-nwjs"
+    "level-rocksdb": "^5.0.0",
+    "sqlite3": "^5.0.0"
   }
 }
