@@ -301,7 +301,7 @@ function onReady() {
 				if (!assocBalances[conf.asset || "base"] || assocBalances[conf.asset || "base"].total == 0)
 					return;
 				try {
-					let amount = Math.round((1-conf.ArbStoreCut) * assocBalances[conf.asset || "base"].total);
+					let amount = Math.round((1-conf.ArbStoreArbiterCut) * assocBalances[conf.asset || "base"].total);
 					let res = await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
 						change_address: row.service_fee_address,
@@ -311,9 +311,9 @@ function onReady() {
 						amount: amount
 					});
 					let arbiter = await arbiters.getByAddress(row.arbiter_address);
-					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, amount, conf.ArbStoreCut, res.unit));
+					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, amount, conf.ArbStoreArbiterCut, res.unit));
 
-					// send ArbStoreCut to our first address
+					// send ArbStoreArbiterCut to our first address
 					await headlessWallet.sendMultiPayment({
 						paying_addresses: [row.service_fee_address],
 						change_address: row.service_fee_address,
@@ -1015,6 +1015,9 @@ walletApiRouter.all('/get_device_address', async ctx => {
 });
 walletApiRouter.all('/get_appeal_fee', async ctx => {
 	ctx.body = JSON.stringify({amount: conf.AppealFeeAmount, asset: conf.asset});
+});
+walletApiRouter.all('/get_address_and_cut', async ctx => {
+	ctx.body = JSON.stringify({address: arbstoreFirstAddress, cut: conf.ArbStoreCut});
 });
 
 // ArbStore Web JSON API
