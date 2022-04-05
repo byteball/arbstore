@@ -53,10 +53,15 @@ exports.trustedAttestorAddresses = process.env.devnet ? ['LJS2XD3M6XR4CBH44DQW7T
 
 // Tags
 exports.available_tags = [
-	'IT',
-	'Insurance',
-	'Finance',
-	'Real estate'
+	'Export/Import',
+	'Domains',
+	'Cryptocurrency exchange',
+	'IT services',
+	'Financial services',
+	'Real estate',
+	'Vehicles',
+	'Collectibles',
+	'Art',
 ];
 
 // Arbiters reputation to be pulled from other arbstores, place it addresses here
