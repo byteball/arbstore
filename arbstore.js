@@ -1016,7 +1016,7 @@ walletApiRouter.all('/get_device_address', async ctx => {
 walletApiRouter.all('/get_appeal_fee', async ctx => {
 	ctx.body = JSON.stringify({amount: conf.AppealFeeAmount, asset: conf.asset});
 });
-walletApiRouter.all('/get_address_and_cut', async ctx => {
+walletApiRouter.all('/get_info', async ctx => {
 	ctx.body = JSON.stringify({address: arbstoreFirstAddress, cut: conf.ArbStoreCut});
 });
 
