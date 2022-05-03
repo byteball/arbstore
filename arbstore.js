@@ -388,7 +388,8 @@ async function postAnnounceUnit(hash) {
 		let res = await headlessWallet.sendMultiPayment({
 			paying_addresses: [arbstoreFirstAddress],
 			messages: [objMessage],
-			change_address: arbstoreFirstAddress
+			change_address: arbstoreFirstAddress,
+			spend_unconfirmed: 'all',
 		});
 		db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [res.unit, arbiter.hash]);
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(res.unit));
