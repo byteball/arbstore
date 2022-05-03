@@ -792,8 +792,10 @@ router.post('/:token', upload.single('photo'), async ctx => {
 	} catch (e) {
 		error = e;
 	} finally {
-		if (error)
-			ctx.throw(403, error);
+		if (error) {
+			ctx.body = JSON.stringify({ success: false, error: error.toString() });
+			return;
+		}
 		if (is_new_arbiter) {
 			checkDeposit(hash);
 		}
