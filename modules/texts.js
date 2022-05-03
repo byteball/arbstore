@@ -40,7 +40,7 @@ exports.payment_confirmed = () => {
 }
 
 exports.request_pairing_code = () => {
-	return `Transaction confirmed. Now we need your permanent pairing code for users to be able to pair with you. [Send permanent pairing code](pairing-code:true)`;
+	return `Now we need your permanent pairing code for users to be able to pair with you. [Send permanent pairing code](pairing-code:true)`;
 }
 
 exports.unit_posted = (unit) => {
