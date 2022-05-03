@@ -4,7 +4,7 @@ const conf = require('ocore/conf');
 const constants = require('ocore/constants');
 
 exports.greetings = () => {
-	return `Hello, this bot can help you signup as an arbiter.
+	return `Hello, this bot will help you signup as an arbiter.
 To start, send me your address. The address should be attested through Real Name Attestation bot.
 
 For the list of available commands type [help](command:help).`;
