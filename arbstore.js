@@ -792,11 +792,12 @@ router.post('/:token', upload.single('photo'), async ctx => {
 	} catch (e) {
 		error = e;
 	} finally {
-		if (!error && is_new_arbiter) {
+		if (error)
+			ctx.throw(403, error);
+		if (is_new_arbiter) {
 			checkDeposit(hash);
-			return ctx.redirect(`/thankyou.html`);
 		}
-		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
+		ctx.body = JSON.stringify({ success: true, is_new_arbiter });
 	}
 });
 
