@@ -4,14 +4,14 @@ const conf = require('ocore/conf');
 const constants = require('ocore/constants');
 
 exports.greetings = () => {
-	return `Hello, this bot can help you signup as an arbiter.
-To start, send me your address. The address should be attested through Real Name Attestation bot.
+	return `Hello, this bot will help you signup as arbiter.
+To start, please send me your address. The address should be attested through Real Name Attestation bot.
 
 For the list of available commands type [help](command:help).`;
 };
 
 exports.not_attested = () => {
-	return "This address is not attested, attest through Real Name Attestation Bot first";
+	return "This address is not attested, attest through Real Name Attestation Bot first. You can find the bot in the Bot Store in your wallet.";
 };
 
 exports.reveal_profile = () => {
@@ -28,7 +28,7 @@ exports.device_address_unknown = () => {
 }
 
 exports.topup_deposit = (amount, address) => {
-	return `Now you need to topup your arbiter's deposit. The deposit serves as a safeguard in case an appeal to your decision is raised and your decision is deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
+	return `Now you need to top up your arbiter's deposit. The deposit serves as a safeguard in case an appeal to your decision is raised and your decision is deemed invalid by a moderator of this ArbStore. You can withdraw your deposit any time if you want to unlist yourself from the ArbStore. [Pay ${amount} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')})`;
 }
 
 exports.received_payment = (amount) => {
@@ -40,11 +40,11 @@ exports.payment_confirmed = () => {
 }
 
 exports.request_pairing_code = () => {
-	return `Transaction confirmed. Now we need your permanent pairing code for users to be able to pair with you. [Send permanent pairing code](pairing-code:true)`;
+	return `Now we need your permanent pairing code for users to be able to pair with you. [Send permanent pairing code](pairing-code:true)`;
 }
 
 exports.unit_posted = (unit) => {
-	return `Your announcement unit was posted into DAG: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\nYou are now set up.`
+	return `Your announcement unit has been posted into the DAG: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\nCongratulations, your arbiter profile is now set up and will appear on the arbiter list in a few minutes.`
 }
 
 exports.signMessage = (user_address) => {
@@ -56,7 +56,7 @@ exports.withdraw_completed = (amount, unit, address) => {
 }
 
 exports.already_announced = () => {
-	return `You were already announced as arbiter, no need to sign the message again`;
+	return `You have already been announced as arbiter, no need to sign the message again`;
 }
 
 exports.serviceFeeSet = (hash, amount) => {
@@ -72,11 +72,11 @@ exports.service_fee_paid = (hash, amount) => {
 }
 
 exports.service_fee_paid_plaintiff = (hash, amount) => {
-	return `We received a payment from you of total ${formatAmount(amount)} for contract ${hash}. Wait for it to stabilize.`;
+	return `We received your payment of ${formatAmount(amount)} for resolution of the dispute concerning contract ${hash}. Wait for it to stabilize.`;
 }
 
 exports.service_fee_stabilized = () => {
-	return 'Your payment is stabilized. Arbiter can now resolve this dispute.';
+	return 'Your payment has stabilized. Arbiter can now resolve this dispute.';
 }
 
 exports.appeal_started = (title) => {
@@ -96,15 +96,15 @@ exports.appeal_fee_paid_appellant = (hash, title) => {
 }
 
 exports.appeal_resolved_arbiter = (hash, title, appeal_fee) => {
-	return `The appeal for contract ${title} with hash ${hash} was approved. The appeal fee ${formatAmount(appeal_fee)} got deducted from your deposit to compensate for incorrect decision. Please check that your arbiter listing is still visible using 'status' command and follow the instructions.`;
+	return `The appeal for contract ${title} with hash ${hash} has been approved. The appeal fee ${formatAmount(appeal_fee)} got deducted from your deposit to compensate for incorrect decision. Please check that your arbiter listing is still visible using 'status' command and follow the instructions.`;
 }
 
 exports.appeal_resolved = (hash, title) => {
-	return `The appeal for contract ${title} with hash ${hash} was approved.`;
+	return `The appeal for contract ${title} with hash ${hash} has been approved.`;
 }
 
 exports.contract_completed = (hash) => {
-	return `The contract with hash ${hash} was completed by contract parties.`;
+	return `The contract with hash ${hash} has been completed by contract parties.`;
 }
 
 exports.service_fee_sent = (hash, amount, cut, unit) => {

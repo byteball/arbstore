@@ -388,7 +388,8 @@ async function postAnnounceUnit(hash) {
 		let res = await headlessWallet.sendMultiPayment({
 			paying_addresses: [arbstoreFirstAddress],
 			messages: [objMessage],
-			change_address: arbstoreFirstAddress
+			change_address: arbstoreFirstAddress,
+			spend_unconfirmed: 'all',
 		});
 		db.query(`UPDATE arbiters SET announce_unit=? WHERE hash=?`, [res.unit, arbiter.hash]);
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.unit_posted(res.unit));
@@ -792,11 +793,14 @@ router.post('/:token', upload.single('photo'), async ctx => {
 	} catch (e) {
 		error = e;
 	} finally {
-		if (!error && is_new_arbiter) {
-			checkDeposit(hash);
-			return ctx.redirect(`/thankyou.html`);
+		if (error) {
+			ctx.body = JSON.stringify({ success: false, error: error.toString() });
+			return;
 		}
-		ctx.redirect(`${ctx.path}?${error ? 'error=' + error : 'success=true'}`);
+		if (is_new_arbiter) {
+			checkDeposit(hash);
+		}
+		ctx.body = JSON.stringify({ success: true, is_new_arbiter });
 	}
 });
 
