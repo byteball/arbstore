@@ -124,7 +124,7 @@ async function getAllVisible() {
 		rc.last_resolve_date,
 		rep.reputation,
 		MAX(latest_units.creation_date) AS last_unit_date,
-			(SELECT SUM(amount) FROM outputs 
+			(SELECT IFNULL(SUM(amount), 0) FROM outputs 
 			JOIN units USING(unit) 
 			WHERE outputs.address=arbiters.deposit_address AND is_spent=0 AND sequence='good' AND is_stable=1 AND outputs.asset IS ?) AS balance
 		FROM arbiters
