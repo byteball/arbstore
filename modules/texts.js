@@ -4,14 +4,15 @@ const conf = require('ocore/conf');
 const constants = require('ocore/constants');
 
 exports.greetings = () => {
-	return `Hello, this bot will help you signup as arbiter.
-To start, please send me your address. The address should be attested through Real Name Attestation bot.
+	return `Hello, this bot will help you signup as arbiter. For detailed instructions please refer to the arbiter guide https://arbstore.org/arb-guide.
+
+To start, please send me your address (use the "..." menu next to the text input). The address should be attested through Real Name Attestation bot.
 
 For the list of available commands type [help](command:help).`;
 };
 
 exports.not_attested = () => {
-	return "This address is not attested, attest through Real Name Attestation Bot first. You can find the bot in the Bot Store in your wallet.";
+	return "This address is not attested, attest through Real Name Attestation Bot first. You can find the bot in the Bot Store in your wallet (in the Chat tab).";
 };
 
 exports.reveal_profile = () => {
@@ -122,14 +123,16 @@ exports.unrecognized_command = () => {
 
 exports.help = () => {
 	return `Available commands:
-[status](command:status) – your current status
+[status](command:status) - your current status
 [help](command:help) - this text
 [edit info](command:edit info) - edit your bio, specializations, other info (give me the web link!)
 [suspend](command:suspend) - shut down your listing from arbiters list
 [live](command:live) - resume your listing
 [withdraw](command:withdraw) - transfer the funds from your deposit to your address, leaving only minimal amount required
 [withdraw all](command:withdraw all) - transfer all the funds from your deposit to your address, also stops the listing
-[revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)`;
+[revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)
+
+For detailed instructions about signing up and resolving disputes please refer to the arbiter guide https://arbstore.org/arb-guide.`;
 };
 
 exports.current_status = (arbiter) => {
