@@ -42,7 +42,7 @@ exports.ArbStoreWebURI = process.env.devnet ? 'http://localhost:' + exports.ArbS
 exports.WebTokenSalt = 'changemeASAP';
 exports.ModeratorDeviceAddresses = [];
 
-exports.asset = process.env.devnet ? '9EEnyOvsMgh8SkPvsRkIiNhSXwvplZk1/8Nr0h17jUw=' : (process.env.testnet ? 'CPPYMBzFzI4+eMk7tLMTGjLF4E60t5MUfo2Gq7Y6Cn4=' : '0IwAk71D5xFP0vTzwamKBwzad3I1ZUjZ1gdeB5OnfOg=');
+exports.asset = process.env.devnet ? '9EEnyOvsMgh8SkPvsRkIiNhSXwvplZk1/8Nr0h17jUw=' : (process.env.testnet ? 'CPPYMBzFzI4+eMk7tLMTGjLF4E60t5MUfo2Gq7Y6Cn4=' : 'S/oCESzEO8G2hvQuI6HsyPr0foLfKwzs+GU73nO9H40=');
 exports.AppealFeeAmount = 100e4;
 exports.min_deposit = 3 * exports.AppealFeeAmount + (exports.asset === 'base' || !exports.asset ? 10000 : 0); // usually ~3xAppealFeeAmount
 
