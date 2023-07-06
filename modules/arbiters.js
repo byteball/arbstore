@@ -143,6 +143,7 @@ async function getAllVisible() {
 		
 		WHERE enabled=1 AND visible=1 AND balance >= ?
 		GROUP BY arbiters.deposit_address
+		ORDER BY reputation DESC, resolved_cnt DESC, total_cnt DESC, last_resolve_date DESC, real_name DESC
 		`, [conf.asset, conf.min_deposit]);
 	rows.forEach(arbiter => {
 		arbiter = parseInfo(arbiter);
