@@ -39,6 +39,7 @@ exports.from_email = '';
 // ArbStoreWeb
 exports.ArbStoreWebPort = (process.env.testnet || process.env.devnet) ? 9003 : 9002;
 exports.ArbStoreWebURI = process.env.devnet ? 'http://localhost:' + exports.ArbStoreWebPort + '/' : (process.env.testnet ? 'https://testnet.arbstore.org/' : 'https://arbstore.org/');
+exports.terms_url = 'https://arbstore.org/terms';
 exports.WebTokenSalt = 'changemeASAP';
 exports.ModeratorDeviceAddresses = [];
 
