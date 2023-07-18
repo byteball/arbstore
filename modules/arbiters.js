@@ -148,6 +148,7 @@ async function getAllVisible() {
 	rows.forEach(arbiter => {
 		arbiter = parseInfo(arbiter);
 	});
+	rows = rows.filter(arbiter => arbiter.info.pairing_code);
 	return rows;
 }
 
