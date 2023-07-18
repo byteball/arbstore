@@ -503,7 +503,7 @@ function extractContractFromUnit(unit) {
 				return reject("no arbiter_address in the unit");
 			let arbiter = await arbiters.getByAddress(arbiter_address[1]);
 			if (!arbiter)
-				return reject("arbiter is now known to this arbstore");
+				return reject("arbiter is not known to this arbstore");
 			let definitionObj = JSON.parse(row.definition);
 			let side1_address = _.get(definitionObj, '[1][0][1][0][1]');
 			let side2_address = _.get(definitionObj, '[1][0][1][1][1]');
