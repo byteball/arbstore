@@ -61,7 +61,7 @@ exports.already_announced = () => {
 }
 
 exports.serviceFeeSet = (hash, amount) => {
-	return `Your fee for resolving the dispute on contract ${hash} is set to ${formatAmount(amount)}. A payment request was sent to the plaintiff. We will notify you when the payment is received.`;
+	return `Your fee for resolving the dispute on contract ${hash} is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
