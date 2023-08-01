@@ -975,6 +975,8 @@ walletApiRouter.post('/appeal/new', async ctx => {
 		if (!contract)
 			return ctx.throw(404, `{"error": "hash not found"}`);
 	}
+	if (contract.status === "in_dispute")
+		return ctx.throw(404, `{"error": "Contract is still in dispute. If the arbiter has only recently posted their decision, please wait for a few minutes until their transaction gets confirmed."}`);
 	if (contract.status != "dispute_resolved")
 		return ctx.throw(404, `{"error": "contract wasn't in dispute"}`);
 	await contracts.updateStatus(contract.hash, "appeal_requested");
