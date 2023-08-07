@@ -544,6 +544,9 @@ function extractContractFromUnit(unit) {
 				return reject("can't find side addresses in the unit");
 			let asset = row.definition.match(/"asset":"([^"]+)"/);
 			let amount = _.get(definitionObj, '[1][1][1][1][1].amount');
+			let amount2 = _.get(definitionObj, '[1][2][1][1][1].amount');
+			if (amount && amount2 && amount2 > amount) // one of the amounts is net of the arbstore fee
+				amount = amount2;
 			if (!asset && !amount) { // probably private asset
 			} else { // public asset
 				if (!asset)
