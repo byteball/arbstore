@@ -49,6 +49,39 @@ let last_plaintiff_device_address = null;
 let appellant_device_address = null;
 let arbstoreFirstAddress = null;
 
+function sendEmail(email, subject, template_filename, params) {
+	const mail = require('ocore/mail.js');
+	const template = fs.readFileSync(__dirname + '/' + template_filename, 'utf8');
+	_.forOwn(params, function(value, key){
+		const re = new RegExp('\\{\\{' + key + '\\}\\}',"g");
+		template = template.replace(re, value);
+	});
+	const html = template.replace(/\{\{\w*\}\}/g, '');
+	const text = html2text(html);
+	mail.sendmail({
+		to: email,
+		from: "noreply@arbstore.org",
+		subject,
+		body: text,
+		htmlBody: html,
+	});
+}
+
+function html2text(html) {
+	return html.replace(/<\/p>/g, '\n\n').replace(/<[^>]+>/g, '').replace(/[\t\r]/g, '').replace(/ +/g, ' ').replace(/\n /g, '\n');
+}
+
+async function getFormattedAmount(amount, asset) {
+	if (!asset || asset === 'base')
+		return (amount / 1e9) + ' GBYTE';
+	const assocMetadata = await wallet.readAssetMetadata([asset]);
+	const metadata = assocMetadata[asset];
+	if (!metadata)
+		return amount + ' of ' + asset;
+	const { decimals, name } = metadata;
+	return (amount / 10 ** decimals) + ' ' + name;
+}
+
 function onReady() {
 	headlessWallet.readFirstAddress(async address => {
 		arbstoreFirstAddress = address;
@@ -521,6 +554,17 @@ function extractContractFromUnit(unit) {
 			if (asset && asset[1] === "base")
 				asset[1] = null;
 			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
+			if (arbiter.email) {
+				const formatted_amount = amount ? await getFormattedAmount(amount, asset[1]) : 'an unknown amount in a private currency';
+				sendEmail(arbiter.email, `New contract on ArbStore`, 'new_contract.html', {
+					real_name: arbiter.real_name,
+					formatted_amount,
+					side1_address,
+					side2_address,
+					shared_address: row.shared_address,
+					contract_hash: contract_hash[1],
+				});
+			}
 			resolve(await contracts.get(contract_hash[1]));
 		});
 		if (rows.length === 0) {
@@ -780,6 +824,7 @@ router.post('/:token', upload.single('photo'), async ctx => {
 		const info = {
 			"short_bio": body.short_bio,
 			"bio": body.bio,
+			"email": body.email,
 			"contact_info": body.contact_info,
 			"tags": tags,
 			"languages": languages
@@ -962,6 +1007,14 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	await contracts.updateField("plaintiff_side", contract.hash, request.my_address === contract.side1_address ? 1 : 2);
 	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 	device.sendMessageToDevice(arbiter.device_address, "arbiter_dispute_request", request);
+	if (arbiter.email) {
+		sendEmail(arbiter.email, `New dispute in an ArbStore contract, action required`, 'new_dispute.html', {
+			real_name: arbiter.real_name,
+			hash: contract.hash,
+			role: contract.me_is_payer ? 'buyer' : 'seller',
+			plainfiff_address: request.my_address,
+		});
+	}
 	
 	ctx.body = `"ok"`;
 });
@@ -1012,6 +1065,8 @@ walletApiRouter.post('/appeal/new', async ctx => {
 
 	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 	device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_started(request.contract.title));
+	if (arbiter.email)
+		sendEmail(arbiter.email, `New appeal in an ArbStore contract`, 'new_appeal.html', { real_name: arbiter.real_name });
 	
 	ctx.body = `"ok"`;
 });
