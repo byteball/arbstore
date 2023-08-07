@@ -51,7 +51,7 @@ let arbstoreFirstAddress = null;
 
 function sendEmail(email, subject, template_filename, params) {
 	const mail = require('ocore/mail.js');
-	const template = fs.readFileSync(__dirname + '/' + template_filename, 'utf8');
+	let template = fs.readFileSync(__dirname + '/' + template_filename, 'utf8');
 	_.forOwn(params, function(value, key){
 		const re = new RegExp('\\{\\{' + key + '\\}\\}',"g");
 		template = template.replace(re, value);
@@ -1021,7 +1021,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	}
 	else
 		console.log("arbiter email not known");
-	
+
 	ctx.body = `"ok"`;
 });
 
