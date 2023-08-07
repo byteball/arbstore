@@ -554,9 +554,9 @@ function extractContractFromUnit(unit) {
 			if (asset && asset[1] === "base")
 				asset[1] = null;
 			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
-			if (arbiter.email) {
+			if (arbiter.info.email) {
 				const formatted_amount = amount ? await getFormattedAmount(amount, asset[1]) : 'an unknown amount in a private currency';
-				sendEmail(arbiter.email, `New contract on ArbStore`, 'emails/new_contract.html', {
+				sendEmail(arbiter.info.email, `New contract on ArbStore`, 'emails/new_contract.html', {
 					real_name: arbiter.real_name,
 					formatted_amount,
 					side1_address,
@@ -564,7 +564,10 @@ function extractContractFromUnit(unit) {
 					shared_address: row.shared_address,
 					contract_hash: contract_hash[1],
 				});
+				console.log(`sent notification about new contract to arbiter email ${arbiter.info.email}`);
 			}
+			else
+				console.log("arbiter email not known");
 			resolve(await contracts.get(contract_hash[1]));
 		});
 		if (rows.length === 0) {
@@ -1007,14 +1010,17 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	await contracts.updateField("plaintiff_side", contract.hash, request.my_address === contract.side1_address ? 1 : 2);
 	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 	device.sendMessageToDevice(arbiter.device_address, "arbiter_dispute_request", request);
-	if (arbiter.email) {
-		sendEmail(arbiter.email, `New dispute in an ArbStore contract, action required`, 'emails/new_dispute.html', {
+	if (arbiter.info.email) {
+		sendEmail(arbiter.info.email, `New dispute in an ArbStore contract, action required`, 'emails/new_dispute.html', {
 			real_name: arbiter.real_name,
 			hash: contract.hash,
 			role: contract.me_is_payer ? 'buyer' : 'seller',
 			plainfiff_address: request.my_address,
 		});
+		console.log(`sent notification about new dispute to arbiter email ${arbiter.info.email}`);
 	}
+	else
+		console.log("arbiter email not known");
 	
 	ctx.body = `"ok"`;
 });
@@ -1065,8 +1071,8 @@ walletApiRouter.post('/appeal/new', async ctx => {
 
 	let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 	device.sendMessageToDevice(arbiter.device_address, "text", texts.appeal_started(request.contract.title));
-	if (arbiter.email)
-		sendEmail(arbiter.email, `New appeal in an ArbStore contract`, 'emails/new_appeal.html', { real_name: arbiter.real_name });
+	if (arbiter.info.email)
+		sendEmail(arbiter.info.email, `New appeal in an ArbStore contract`, 'emails/new_appeal.html', { real_name: arbiter.real_name });
 	
 	ctx.body = `"ok"`;
 });
