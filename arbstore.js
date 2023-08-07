@@ -1018,7 +1018,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 			real_name: arbiter.real_name,
 			hash: contract.hash,
 			role: contract.me_is_payer ? 'buyer' : 'seller',
-			plainfiff_address: request.my_address,
+			plaintiff_address: request.my_address,
 		});
 		console.log(`sent notification about new dispute to arbiter email ${arbiter.info.email}`);
 	}
