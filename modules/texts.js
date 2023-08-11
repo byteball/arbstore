@@ -65,7 +65,7 @@ exports.serviceFeeSet = (hash, amount) => {
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
-	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``);
+	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``) + `\n\nThe arbiter will start working on the case only after you pay.`;
 }
 
 exports.service_fee_paid = (hash, amount) => {
