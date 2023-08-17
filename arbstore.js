@@ -347,14 +347,16 @@ function onReady() {
 					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, amount, conf.ArbStoreArbiterCut, res.unit));
 
 					// send ArbStoreArbiterCut to our first address
-					await headlessWallet.sendMultiPayment({
-						paying_addresses: [row.service_fee_address],
-						change_address: row.service_fee_address,
-						fee_paying_wallet: [arbstoreFirstAddress],
-						to_address: arbstoreFirstAddress,
-						asset: conf.asset || "base",
-						amount: assocBalances[conf.asset || "base"].total - amount
-					});
+					if (conf.ArbStoreArbiterCut) {
+						await headlessWallet.sendMultiPayment({
+							paying_addresses: [row.service_fee_address],
+							change_address: row.service_fee_address,
+							fee_paying_wallet: [arbstoreFirstAddress],
+							to_address: arbstoreFirstAddress,
+							asset: conf.asset || "base",
+							amount: assocBalances[conf.asset || "base"].total - amount
+						});
+					}
 				} catch (e) {
 					console.warn('error while trying to send payment to arbiter from address '+row.service_fee_address+', balance: ' + assocBalances[conf.asset || "base"].total)
 					return;

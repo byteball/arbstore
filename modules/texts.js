@@ -109,7 +109,8 @@ exports.contract_completed = (hash) => {
 }
 
 exports.service_fee_sent = (hash, amount, cut, unit) => {
-	return `We deposited ${formatAmount(amount)} to your deposit address (we charged the ${cut*100}% ArbStore cut from the money paid by plaintiff) for resolving contract ${hash}, unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}`;	
+	const cutText = cut ? `(we charged the ${cut * 100}% ArbStore cut from the money paid by the plaintiff) ` : '';
+	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract ${hash}, unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}`;	
 }
 
 exports.not_enough_funds = (amount) => {
