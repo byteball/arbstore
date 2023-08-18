@@ -23,7 +23,9 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "multer": "^1.4.4",
-    "sharp": "^0.29.3"
+    "node-fetch": "^2.6.12",
+    "sharp": "^0.29.3",
+    "validator": "^13.11.0"
   },
   "resolutions": {
     "moment": "npm:dayjs"
