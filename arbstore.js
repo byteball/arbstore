@@ -1100,7 +1100,9 @@ apiRouter.get('/languages', ctx => {
 	ctx.body = available_languages;
 })
 
-apiRouter.post('/subscribe', mailerliteController);
+if (process.env.MAILERLITE_API_KEY) {
+	apiRouter.post('/subscribe', mailerliteController);
+}
 
 apiRouter.get('/tags', ctx => {
 	ctx.body = conf.available_tags;
