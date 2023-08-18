@@ -60,20 +60,20 @@ exports.already_announced = () => {
 	return `You have already been announced as arbiter, no need to sign the message again`;
 }
 
-exports.serviceFeeSet = (hash, amount) => {
-	return `Your fee for resolving the dispute on contract ${hash} is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
+exports.serviceFeeSet = (hash, title, amount) => {
+	return `Your fee for resolving the dispute on contract "${title}" (contract hash ${hash}) is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
-	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``) + `\n\nThe arbiter will start working on the case only after you pay.`;
+	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. Please pay [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``) + `\n\nThe arbiter will start working on the case only after you pay.`;
 }
 
-exports.service_fee_paid = (hash, amount) => {
-	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash}. We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
+exports.service_fee_paid = (hash, title, amount) => {
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract "${title}" (contract hash ${hash}). We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
 }
 
-exports.service_fee_paid_plaintiff = (hash, amount) => {
-	return `We received your payment of ${formatAmount(amount)} for resolution of the dispute concerning contract ${hash}. Wait for it to stabilize.`;
+exports.service_fee_paid_plaintiff = (hash, title, amount) => {
+	return `We received your payment of ${formatAmount(amount)} for resolution of the dispute concerning contract "${title}" (contract hash ${hash}). Please wait for it to stabilize.`;
 }
 
 exports.service_fee_stabilized = () => {
@@ -81,7 +81,7 @@ exports.service_fee_stabilized = () => {
 }
 
 exports.appeal_started = (title) => {
-	return `We received an appeal to your decision on contract ${title}`;
+	return `We received an appeal to your decision on contract "${title}"`;
 }
 
 exports.payAppealFee = (amount, address) => {
@@ -89,28 +89,28 @@ exports.payAppealFee = (amount, address) => {
 }
 
 exports.appeal_fee_paid = (hash, title) => {
-	return `Appeal fee received for contract ${title} with hash ${hash}. You can resolve it now.`;
+	return `Appeal fee received for contract "${title}" with hash ${hash}. You can resolve it now.`;
 }
 
 exports.appeal_fee_paid_appellant = (hash, title) => {
-	return `Appeal fee received for contract ${title} with hash ${hash}. Moderator can now resolve it.`;
+	return `Appeal fee received for contract "${title}" with hash ${hash}. Moderator can now resolve it.`;
 }
 
 exports.appeal_resolved_arbiter = (hash, title, appeal_fee) => {
-	return `The appeal for contract ${title} with hash ${hash} has been approved. The appeal fee ${formatAmount(appeal_fee)} got deducted from your deposit to compensate for incorrect decision. Please check that your arbiter listing is still visible using 'status' command and follow the instructions.`;
+	return `The appeal for contract "${title}" with hash ${hash} has been approved. The appeal fee ${formatAmount(appeal_fee)} got deducted from your deposit to compensate for the incorrect decision. Please check that your arbiter listing is still visible using [status](command:status) command and follow the instructions.`;
 }
 
 exports.appeal_resolved = (hash, title) => {
-	return `The appeal for contract ${title} with hash ${hash} has been approved.`;
+	return `The appeal for contract "${title}" with hash ${hash} has been approved.`;
 }
 
-exports.contract_completed = (hash) => {
-	return `The contract with hash ${hash} has been completed by contract parties.`;
+exports.contract_completed = (hash, title) => {
+	return `The contract "${title}" (contract hash ${hash}) has been completed by contract parties.`;
 }
 
-exports.service_fee_sent = (hash, amount, cut, unit) => {
+exports.service_fee_sent = (hash, title, amount, cut, unit) => {
 	const cutText = cut ? `(we charged the ${cut * 100}% ArbStore cut from the money paid by the plaintiff) ` : '';
-	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract ${hash}, unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}`;	
+	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract "${title}" (contract hash ${hash}), unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\n\nType [help](command:help) to see how to withdraw the funds.`;	
 }
 
 exports.not_enough_funds = (amount) => {
@@ -131,7 +131,7 @@ exports.help = () => {
 [live](command:live) - resume your listing
 [withdraw](command:withdraw) - transfer the funds from your deposit to your address, leaving only minimal amount required
 [withdraw all](command:withdraw all) - transfer all the funds from your deposit to your address, also stops the listing
-[revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back on this one)
+[revive](command:revive) - re-announce your listing on this ArbStore (in case you moved to some other ArbStore and want to go back to this one)
 
 For detailed instructions about signing up and resolving disputes please refer to the arbiter guide https://arbstore.org/arb-guide.`;
 };

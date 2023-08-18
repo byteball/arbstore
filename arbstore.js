@@ -317,7 +317,7 @@ function onReady() {
 					});
 				});
 
-				respond(texts.serviceFeeSet(hash, amount));
+				respond(texts.serviceFeeSet(hash, contract.contract.title, amount));
 			}},
 			{pattern: /.*/, action: () => {
 				respond(texts.unrecognized_command());
@@ -346,7 +346,8 @@ function onReady() {
 						amount: amount
 					});
 					let arbiter = await arbiters.getByAddress(row.arbiter_address);
-					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, amount, conf.ArbStoreArbiterCut, res.unit));
+					let contract = await contracts.get(row.hash);
+					device.sendMessageToDevice(arbiter.device_address, "text", texts.service_fee_sent(row.hash, contract.contract.title, amount, conf.ArbStoreArbiterCut, res.unit));
 
 					// send ArbStoreArbiterCut to our first address
 					if (conf.ArbStoreArbiterCut) {
@@ -482,10 +483,10 @@ let serviceFeePaymentHandler = async (arrUnits, type) => {
 		let plaintiff_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
 		if (type === 'stable') {
 			await contracts.updateStatus(contract.hash, "in_dispute");
-		 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.service_fee_paid(contract.hash, row.amount));
+		 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.service_fee_paid(contract.hash, contract.contract.title, row.amount));
 		 	device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_stabilized());
 		} else {
-			device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, row.amount));
+			device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, contract.contract.title, row.amount));
 		}
 	});
 };
@@ -630,7 +631,7 @@ eventBus.on('mci_became_stable', async mci => {
 		let contract = await contracts.get(row.hash);
 		await contracts.updateStatus(contract.hash, "completed");
 		let arbiter = await arbiters.getByAddress(row.arbiter_address);
-		device.sendMessageToDevice(arbiter.device_address, 'text', texts.contract_completed(row.hash));
+		device.sendMessageToDevice(arbiter.device_address, 'text', texts.contract_completed(row.hash, contract.contract.title));
 	});
 });
 
