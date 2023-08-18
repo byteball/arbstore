@@ -35,6 +35,8 @@ const apiRouter = new KoaRouter();
 const walletApiRouter = new KoaRouter({prefix: '/api'});
 const sharp = require('sharp');
 
+const { mailerliteController } = require('./mailerlite.js');
+
 app.use(mount('/assets/', serve(__dirname + '/assets')));
 const upload = multer();
 app.use(cors());
@@ -1097,6 +1099,9 @@ apiRouter.use(async (ctx, next) => {ctx.useJSON = true;await next()});
 apiRouter.get('/languages', ctx => {
 	ctx.body = available_languages;
 })
+
+apiRouter.post('/subscribe', mailerliteController);
+
 apiRouter.get('/tags', ctx => {
 	ctx.body = conf.available_tags;
 })
