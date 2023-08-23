@@ -989,7 +989,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	if (!request.contract_hash || !request.my_address || !request.peer_address || typeof request.me_is_payer === "undefined" || !request.my_pairing_code || !request.peer_pairing_code || !request.encrypted_contract || !request.unit)
 		return ctx.throw(404, `{"error": "not all fields present"}`);
 	let contract = await contracts.get(request.contract_hash);
-	if (!contract) { // no sniped contract were created, probably because arbbiter was on another arbsotre atm of contract creation
+	if (!contract) { // no sniped contract was created, probably because the arbiter was on another arbstore atm of contract creation
 		contract = await extractContractFromUnit(request.unit).catch((err) => {ctx.throw(404, `{"error": "${err}"}`);});
 		if (!contract)
 			return ctx.throw(404, `{"error": "hash not found"}`);
@@ -1004,6 +1004,8 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	//if (balances[contract.asset] < contract.amount)
 	//	return ctx.throw(200, JSON.stringify({error: '{"error": "not enough balance on the contract"}'}));
 	if (!contract.amount && !contract.asset) {
+		if (!request.amount)
+			return ctx.throw(404, `{"error": "contract amount not known"}`);
 		await contracts.updateField("amount", contract.hash, request.amount);
 		await contracts.updateField("asset", contract.hash, request.asset);
 	} else {
