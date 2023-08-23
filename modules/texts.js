@@ -60,20 +60,20 @@ exports.already_announced = () => {
 	return `You have already been announced as arbiter, no need to sign the message again`;
 }
 
-exports.serviceFeeSet = (hash, title, amount) => {
-	return `Your fee for resolving the dispute on contract "${title}" (contract hash ${hash}) is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
+exports.serviceFeeSet = (hash, shared_address, amount) => {
+	return `Your fee for resolving the dispute on contract ${hash} (address ${shared_address}) is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
 	return `Arbiter ${real_name} is asking ${formatAmount(amount)} for their service of resolving a dispute. Please pay [Pay ${formatAmount(amount)} to ${address}](obyte:${address}?amount=${amount}&asset=${encodeURIComponent(conf.asset || 'base')}).\nIf you wish to discuss the cost with the arbiter, you can pair with them: [arbiter](obyte:${pairing_code})` + (comment ? `\n\nArbiter's comment: ${comment}` : ``) + `\n\nThe arbiter will start working on the case only after you pay.`;
 }
 
-exports.service_fee_paid = (hash, title, amount) => {
-	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract "${title}" (contract hash ${hash}). We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
+exports.service_fee_paid = (hash, shared_address, amount) => {
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash} (contract address ${shared_address}). We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
 }
 
-exports.service_fee_paid_plaintiff = (hash, title, amount) => {
-	return `We received your payment of ${formatAmount(amount)} for resolution of the dispute concerning contract "${title}" (contract hash ${hash}). Please wait for it to stabilize.`;
+exports.service_fee_paid_plaintiff = (hash, shared_address, amount) => {
+	return `We received your payment of ${formatAmount(amount)} for resolution of the dispute concerning contract ${hash} (contract address ${shared_address}). Please wait for it to stabilize.`;
 }
 
 exports.service_fee_stabilized = () => {
@@ -104,13 +104,13 @@ exports.appeal_resolved = (hash, title) => {
 	return `The appeal for contract "${title}" with hash ${hash} has been approved.`;
 }
 
-exports.contract_completed = (hash, title) => {
-	return `The contract "${title}" (contract hash ${hash}) has been completed by contract parties.`;
+exports.contract_completed = (hash, shared_address) => {
+	return `The contract ${hash} (contract address ${shared_address}) has been completed by the contract parties.`;
 }
 
-exports.service_fee_sent = (hash, title, amount, cut, unit) => {
+exports.service_fee_sent = (hash, shared_address, amount, cut, unit) => {
 	const cutText = cut ? `(we charged the ${cut * 100}% ArbStore cut from the money paid by the plaintiff) ` : '';
-	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract "${title}" (contract hash ${hash}), unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\n\nType [help](command:help) to see how to withdraw the funds.`;	
+	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract ${hash} (contract address ${shared_address}), unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\n\nType [help](command:help) to see how to withdraw the funds.`;	
 }
 
 exports.not_enough_funds = (amount) => {
