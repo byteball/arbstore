@@ -61,7 +61,7 @@ exports.already_announced = () => {
 }
 
 exports.serviceFeeSet = (hash, shared_address, amount) => {
-	return `Your fee for resolving the dispute on contract ${hash} (address ${shared_address}) is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
+	return `Your fee for resolving the dispute on the contract ${hash} (address ${shared_address}) is set to ${formatAmount(amount)}.\n\nA payment request was sent to the plaintiff. We will notify you when the payment is received.\n\nYou are supposed to start working on the dispute only after the ArbStore receives the payment from the plaintiff. The ArbStore will forward this payment to you after you post your decision on the dispute.`;
 }
 
 exports.payForArbiterService = (real_name, amount, address, pairing_code, comment) => {
@@ -69,7 +69,7 @@ exports.payForArbiterService = (real_name, amount, address, pairing_code, commen
 }
 
 exports.service_fee_paid = (hash, shared_address, amount) => {
-	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on contract ${hash} (contract address ${shared_address}). We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
+	return `We received a ${formatAmount(amount)} payment from the plaintiff for the resolution of the dispute on the contract ${hash} (contract address ${shared_address}). We will hold it until you resolve this dispute by clicking buttons in the dispute view.`;
 }
 
 exports.service_fee_paid_plaintiff = (hash, shared_address, amount) => {
@@ -110,7 +110,7 @@ exports.contract_completed = (hash, shared_address) => {
 
 exports.service_fee_sent = (hash, shared_address, amount, cut, unit) => {
 	const cutText = cut ? `(we charged the ${cut * 100}% ArbStore cut from the money paid by the plaintiff) ` : '';
-	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving contract ${hash} (contract address ${shared_address}), unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\n\nType [help](command:help) to see how to withdraw the funds.`;	
+	return `We deposited ${formatAmount(amount)} to your deposit address ${cutText}for resolving the contract ${hash} (contract address ${shared_address}), unit: https://${process.env.testnet ? 'testnet' : ''}explorer.obyte.org/#${unit}\n\nType [help](command:help) to see how to withdraw the funds.`;	
 }
 
 exports.not_enough_funds = (amount) => {
