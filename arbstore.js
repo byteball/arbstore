@@ -683,7 +683,7 @@ function decryptWebToken(token){
 	if (!hash || !hours)
 		return null;
 	let current_hours = Math.floor(Date.now() / 1000 / 60 / 60);
-	if (current_hours - hours > 1)
+	if (current_hours - hours > 48)
 		return null;
 	return hash;
 }
@@ -763,7 +763,7 @@ router.get('/:token', async ctx => {
 		ctx.throw(404);
 	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
 	if (!hash)
-		ctx.throw(404, `invalid token`);
+		ctx.throw(401, `invalid token`);
 	let arbiter = await arbiters.getByHash(hash);
 	if (!arbiter)
 		ctx.throw(404, `hash not found`);
@@ -787,7 +787,7 @@ router.post('/:token', upload.single('photo'), async ctx => {
 		ctx.throw(404);
 	let hash = decryptWebToken(token) || ctx.cookies.get('hash');
 	if (!hash)
-		ctx.throw(404, `invalid token`);
+		ctx.throw(401, `invalid token`);
 	let error;
 	let is_new_arbiter = true;
 	try {
