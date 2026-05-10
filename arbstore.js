@@ -638,21 +638,26 @@ eventBus.on('mci_became_stable', async mci => {
 // arbiter appeal stats
 eventBus.on('mci_became_stable', async mci => {
 	let rows = await db.query(
-		`SELECT payload
+		`SELECT DISTINCT payload, address
 		FROM messages
 		JOIN unit_authors USING(unit)
 		JOIN units USING(unit)
-		WHERE main_chain_index=? AND payload IS NOT NULL AND address IN (?)`, [mci, conf.ArbStoreAddresses.concat([arbstoreFirstAddress])]);
-	rows.forEach(async row => {
+		WHERE main_chain_index=? AND app='data' AND payload IS NOT NULL AND address IN (?)`, [mci, conf.ArbStoreAddresses.concat([arbstoreFirstAddress])]);
+	let seen = {};
+	for (let row of rows) {
 		const data = JSON.parse(row.payload);
 		if (data.appealed != true || !data.arbiter_address)
-			return;
+			continue;
+		const key = data.arbiter_address + ':' + row.address;
+		if (seen[key])
+			continue;
+		seen[key] = true;
 		let arRows = await db.query(`SELECT reputation FROM arbstore_arbiters_reputation WHERE arbiter_address=?`, [data.arbiter_address]);
 		if (arRows.length)
 			await db.query(`UPDATE arbstore_arbiters_reputation SET reputation = reputation-1 WHERE arbiter_address=?`, [data.arbiter_address]);
 		else
 			await db.query(`INSERT INTO arbstore_arbiters_reputation (arbiter_address, reputation) VALUES (?, ?)`, [data.arbiter_address, -1]);
-	});
+	}
 });
 
 const CIPHER_ALGO = 'aes-256-ctr';
