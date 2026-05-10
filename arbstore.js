@@ -292,6 +292,8 @@ function onReady() {
 					return respond(`incorrect contract hash`);
 				if (contract.status !== 'dispute_requested')
 					return respond(`contract is not in dispute`);
+				if (contract.arbiter_address !== current_arbiter.address)
+					return respond(`you are not the arbiter for this contract`);
 				let comment = lines.length > 2 ? lines[2].replace(/(.*)\[.*\]\(.*\)(.*)/g, "$1$2") : "";
 				// pair with plaintiff and send payment request
 				let matches = contract.plaintiff_pairing_code.match(/^([\w\/+]+)@([\w.:\/-]+)#(.+)$/);
