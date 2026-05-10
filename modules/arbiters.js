@@ -122,7 +122,7 @@ async function getAllVisible() {
 		tc.total_cnt,
 		rc.resolved_cnt,
 		rc.last_resolve_date,
-		rep.reputation,
+		IFNULL(rep.reputation, 0) AS reputation,
 		MAX(latest_units.creation_date) AS last_unit_date,
 			(SELECT IFNULL(SUM(amount), 0) FROM outputs 
 			JOIN units USING(unit) 
