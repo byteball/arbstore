@@ -537,52 +537,51 @@ function extractContractFromUnit(unit) {
 		}
 		if (rows.length > 1)
 			return reject("more than 1 contract message in the unit, can't process");
-		rows.forEach(async row => {
-			let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
-			if (!contract_hash)
-				return reject("no contract hash in the unit");
-			let arbiter_address = row.payload.match(/"arbiter":"([^"]+)"/);
-			if (!arbiter_address)
-				return reject("no arbiter_address in the unit");
-			let arbiter = await arbiters.getByAddress(arbiter_address[1]);
-			if (!arbiter)
-				return reject("arbiter is not known to this arbstore");
-			let definitionObj = JSON.parse(row.definition);
-			let side1_address = _.get(definitionObj, '[1][0][1][0][1]');
-			let side2_address = _.get(definitionObj, '[1][0][1][1][1]');
-			if (!side1_address || !side2_address)
-				return reject("can't find side addresses in the unit");
-			let asset = row.definition.match(/"asset":"([^"]+)"/);
-			let amount = _.get(definitionObj, '[1][1][1][1][1].amount');
-			let amount2 = _.get(definitionObj, '[1][2][1][1][1].amount');
-			if (amount && amount2 && amount2 > amount) // one of the amounts is net of the arbstore fee
-				amount = amount2;
-			if (!asset && !amount) { // probably private asset
-			} else { // public asset
-				if (!asset)
-					return reject("no asset in the unit");
-				if (!amount || !validationUtils.isPositiveInteger(amount))
-					return reject("no amount in the unit");
-			}
-			if (asset && asset[1] === "base")
-				asset[1] = null;
-			await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
-			if (arbiter.info.email) {
-				const formatted_amount = amount ? await getFormattedAmount(amount, asset[1]) : 'an unknown amount in a private currency';
-				sendEmail(arbiter.info.email, `New contract on ArbStore`, 'emails/new_contract.html', {
-					real_name: arbiter.real_name,
-					formatted_amount,
-					side1_address,
-					side2_address,
-					shared_address: row.shared_address,
-					contract_hash: contract_hash[1],
-				});
-				console.log(`sent notification about new contract to arbiter email ${arbiter.info.email}`);
-			}
-			else
-				console.log("arbiter email not known");
-			resolve(await contracts.get(contract_hash[1]));
-		});
+		const row = rows[0];
+		let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
+		if (!contract_hash)
+			return reject("no contract hash in the unit");
+		let arbiter_address = row.payload.match(/"arbiter":"([^"]+)"/);
+		if (!arbiter_address)
+			return reject("no arbiter_address in the unit");
+		let arbiter = await arbiters.getByAddress(arbiter_address[1]);
+		if (!arbiter)
+			return reject("arbiter is not known to this arbstore");
+		let definitionObj = JSON.parse(row.definition);
+		let side1_address = _.get(definitionObj, '[1][0][1][0][1]');
+		let side2_address = _.get(definitionObj, '[1][0][1][1][1]');
+		if (!side1_address || !side2_address)
+			return reject("can't find side addresses in the unit");
+		let asset = row.definition.match(/"asset":"([^"]+)"/);
+		let amount = _.get(definitionObj, '[1][1][1][1][1].amount');
+		let amount2 = _.get(definitionObj, '[1][2][1][1][1].amount');
+		if (amount && amount2 && amount2 > amount) // one of the amounts is net of the arbstore fee
+			amount = amount2;
+		if (!asset && !amount) { // probably private asset
+		} else { // public asset
+			if (!asset)
+				return reject("no asset in the unit");
+			if (!amount || !validationUtils.isPositiveInteger(amount))
+				return reject("no amount in the unit");
+		}
+		if (asset && asset[1] === "base")
+			asset[1] = null;
+		await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
+		if (arbiter.info.email) {
+			const formatted_amount = amount ? await getFormattedAmount(amount, asset[1]) : 'an unknown amount in a private currency';
+			sendEmail(arbiter.info.email, `New contract on ArbStore`, 'emails/new_contract.html', {
+				real_name: arbiter.real_name,
+				formatted_amount,
+				side1_address,
+				side2_address,
+				shared_address: row.shared_address,
+				contract_hash: contract_hash[1],
+			});
+			console.log(`sent notification about new contract to arbiter email ${arbiter.info.email}`);
+		}
+		else
+			console.log("arbiter email not known");
+		resolve(await contracts.get(contract_hash[1]));
 	});
 }
 eventBus.on('saved_unit', objJoint => {
