@@ -532,6 +532,11 @@ function extractContractFromUnit(unit) {
 			JOIN unit_authors USING(unit)
 			JOIN definitions USING(definition_chash)
 			WHERE unit=? AND payload LIKE '{"contract_text_hash"%"arbiter"%' AND definition LIKE '["or",%'`, [unit]);
+		if (rows.length === 0) {
+			return reject("unit either not known to arbstore yet or does not contain any contract info");
+		}
+		if (rows.length > 1)
+			return reject("more than 1 contract message in the unit, can't process");
 		rows.forEach(async row => {
 			let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
 			if (!contract_hash)
@@ -578,9 +583,6 @@ function extractContractFromUnit(unit) {
 				console.log("arbiter email not known");
 			resolve(await contracts.get(contract_hash[1]));
 		});
-		if (rows.length === 0) {
-			return reject("unit either not known to arbstore yet or does not contain any contract info");
-		}
 	});
 }
 eventBus.on('saved_unit', objJoint => {
