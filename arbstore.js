@@ -19,6 +19,7 @@ const objectHash = require('ocore/object_hash.js');
 const balances = require('ocore/balances.js');
 const wallet = require('ocore/wallet.js');
 const constants = require('ocore/constants.js');
+const arbiter_contract = require('ocore/arbiter_contract.js');
 
 const Koa = require('koa');
 const app = new Koa();
@@ -1078,6 +1079,12 @@ walletApiRouter.post('/appeal/new', async ctx => {
 	var pairing_secret = matches[3];
 	if (pubkey.length !== 44)
 		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
+
+	if (!request.contract.my_party_name || !request.contract.peer_party_name || !request.contract.arbiter_address || !request.contract.amount)
+		return ctx.throw(404, `{"error": "not all contract fields present"}`);
+	const hash = arbiter_contract.getHash(request.contract);
+	if (hash !== request.contract_hash)
+		return ctx.throw(404, `{"error": "contract text doesn't match the hash"}`);
 
 	await contracts.updateStatus(contract.hash, "appeal_requested");
 	await contracts.updateField("contract", contract.hash, JSON.stringify(request.contract));
