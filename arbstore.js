@@ -655,19 +655,29 @@ eventBus.on('mci_became_stable', async mci => {
 	});
 });
 
-function encrypt(text){
-	let cipher = crypto.createCipher('aes-256-ctr', conf.WebTokenSalt);
-	let crypted = cipher.update(text, 'utf8', 'hex');
-	crypted += cipher.final('hex');
-	return crypted;
+const CIPHER_ALGO = 'aes-256-ctr';
+const CIPHER_IV_LENGTH = 16;
+
+function getCipherKey() {
+	return crypto.createHash('sha256').update(conf.WebTokenSalt).digest();
 }
 
-function decrypt(text){
-	let decipher = crypto.createDecipher('aes-256-ctr', conf.WebTokenSalt);
+function encrypt(text) {
+	const iv = crypto.randomBytes(CIPHER_IV_LENGTH);
+	const cipher = crypto.createCipheriv(CIPHER_ALGO, getCipherKey(), iv);
+	const crypted = Buffer.concat([iv, cipher.update(text, 'utf8'), cipher.final()]);
+	return crypted.toString('hex');
+}
+
+function decrypt(text) {
 	try {
-		let dec = decipher.update(text, 'hex', 'utf8');
-		dec += decipher.final('utf8');
-		return dec;
+		const buf = Buffer.from(text, 'hex');
+		if (buf.length < CIPHER_IV_LENGTH)
+			return "";
+		const iv = buf.slice(0, CIPHER_IV_LENGTH);
+		const decipher = crypto.createDecipheriv(CIPHER_ALGO, getCipherKey(), iv);
+		const dec = Buffer.concat([decipher.update(buf.slice(CIPHER_IV_LENGTH)), decipher.final()]);
+		return dec.toString('utf8');
 	} catch (e) {
 		return "";
 	}
