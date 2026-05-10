@@ -878,17 +878,20 @@ moderatorRouter.get('/pair', async ctx => {
 });
 function checkLogin(ctx) {
 	let address = decrypt(ctx.cookies.get('address'));
-	if (!address || !conf.ModeratorDeviceAddresses.includes(address))
+	if (!address || !conf.ModeratorDeviceAddresses.includes(address)) {
 		ctx.redirect('/moderator/pair');
+		return false;
+	}
+	return true;
 };
 moderatorRouter.get('/', async ctx => {
-	checkLogin(ctx);
+	if (!checkLogin(ctx)) return;
 	let in_appeal = await contracts.getAllByStatus(['in_appeal']);
 	let closed = await contracts.getAllByStatus(['appeal_declined', 'appeal_approved']);
 	await ctx.render('moderator', {in_appeal: in_appeal, closed: closed});
 });
 moderatorRouter.get('/:hash', async ctx => {
-	checkLogin(ctx);
+	if (!checkLogin(ctx)) return;
 	let hash = ctx.params['hash'];
 	if (!hash)
 		ctx.throw(404, 'no contract hash');
@@ -900,7 +903,7 @@ moderatorRouter.get('/:hash', async ctx => {
 	await ctx.render('moderator_contract', contract);
 });
 moderatorRouter.post('/:hash', async ctx => {
-	checkLogin(ctx);
+	if (!checkLogin(ctx)) return;
 	let hash = ctx.params['hash'];
 	if (!hash)
 		ctx.throw(404, 'no contract hash');
