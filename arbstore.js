@@ -1067,9 +1067,6 @@ walletApiRouter.post('/appeal/new', async ctx => {
 		return ctx.throw(404, `{"error": "Contract is still in dispute. If the arbiter has only recently posted their decision, please wait for a few minutes until their transaction gets confirmed."}`);
 	if (contract.status != "dispute_resolved")
 		return ctx.throw(404, `{"error": "contract wasn't in dispute"}`);
-	await contracts.updateStatus(contract.hash, "appeal_requested");
-	await contracts.updateField("contract", contract.hash, JSON.stringify(request.contract));
-
 	if (request.my_pairing_code !== contract.plaintiff_pairing_code && request.my_pairing_code !== contract.peer_pairing_code)
 		return ctx.throw(404, `{"error": "wrong pairing code"}`);
 
@@ -1081,6 +1078,10 @@ walletApiRouter.post('/appeal/new', async ctx => {
 	var pairing_secret = matches[3];
 	if (pubkey.length !== 44)
 		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
+
+	await contracts.updateStatus(contract.hash, "appeal_requested");
+	await contracts.updateField("contract", contract.hash, JSON.stringify(request.contract));
+
 	device.addUnconfirmedCorrespondent(pubkey, hub, 'New', function(device_address){
 		appellant_device_address = device_address;
 		device.startWaitingForPairing(function(reversePairingInfo){
