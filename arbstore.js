@@ -445,11 +445,11 @@ eventBus.on('new_my_transactions', async arrUnits => {
 		JOIN unit_authors ON outputs.unit=unit_authors.unit AND unit_authors.address=arbiters.address -- only payments from arbiter address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY deposit_address`, [arrUnits, conf.asset]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let amount = row.amount;
 		let arbiter = await arbiters.getByHash(row.hash);
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.received_payment(amount));
-	});
+	}
 });
 
 // deposit topup became stable
@@ -461,11 +461,11 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		JOIN unit_authors ON outputs.unit=unit_authors.unit AND unit_authors.address=arbiters.address -- only payments from arbiter address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY deposit_address`, [arrUnits, conf.asset]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let arbiter = await arbiters.getByHash(row.hash);
 	 	device.sendMessageToDevice(arbiter.device_address, 'text', texts.payment_confirmed());
 		checkDeposit(row.hash);
-	});
+	}
 });
 
 // service fee paid
@@ -476,9 +476,9 @@ let serviceFeePaymentHandler = async (arrUnits, type) => {
 		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.service_fee_address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY service_fee_address`, [arrUnits, conf.asset]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let contract = await contracts.get(row.hash);
-		if (contract.status !== "dispute_requested" || row.amount < contract.service_fee) return;
+		if (contract.status !== "dispute_requested" || row.amount < contract.service_fee) continue;
 		let arbiter = await arbiters.getByAddress(contract.arbiter_address);
 		let plaintiff_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
 		if (type === 'stable') {
@@ -488,7 +488,7 @@ let serviceFeePaymentHandler = async (arrUnits, type) => {
 		} else {
 			device.sendMessageToDevice(plaintiff_device_address, 'text', texts.service_fee_paid_plaintiff(contract.hash, contract.shared_address, row.amount));
 		}
-	});
+	}
 };
 eventBus.on('new_my_transactions', arrUnits => {serviceFeePaymentHandler(arrUnits, 'new')});
 eventBus.on('my_transactions_became_stable', arrUnits => {serviceFeePaymentHandler(arrUnits, 'stable')});
@@ -501,18 +501,18 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON outputs.address=arb_c.appeal_fee_address
 		WHERE outputs.unit IN(?) AND outputs.asset IS ?
 		GROUP BY appeal_fee_address`, [arrUnits, conf.asset]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let contract = await contracts.get(row.hash);
-		if (contract.status !== "appeal_requested" || row.amount < conf.AppealFeeAmount) return;
+		if (contract.status !== "appeal_requested" || row.amount < conf.AppealFeeAmount) continue;
 		await contracts.updateStatus(contract.hash, "in_appeal");
 		let pdRows = await db.query(
 			`SELECT device_address
 			FROM correspondent_devices
 			WHERE device_address IN (?)`, [conf.ModeratorDeviceAddresses]
 		);
-		pdRows.forEach(pdRow => {
+		for (let pdRow of pdRows) {
 			device.sendMessageToDevice(pdRow.device_address, 'text', texts.appeal_fee_paid(contract.hash, contract.contract.title));
-		})
+		}
 		let appellant_device_address;
 		if (contract.plaintiff_side !== contract.winner_side) {
 			appellant_device_address = objectHash.getDeviceAddress(contract.plaintiff_pairing_code.split('@')[0]);
@@ -520,7 +520,7 @@ eventBus.on('my_transactions_became_stable', async arrUnits => {
 			appellant_device_address = objectHash.getDeviceAddress(contract.peer_pairing_code.split('@')[0]);
 		}
 		device.sendMessageToDevice(appellant_device_address, 'text', texts.appeal_fee_paid_appellant(contract.hash, contract.contract.title));
-	});
+	}
 });
 
 // snipe for arbiter contracts and calculate statistics
@@ -597,11 +597,11 @@ eventBus.on('mci_became_stable', async mci => {
 		JOIN unit_authors USING(unit)
 		JOIN arbiters USING(address)
 		WHERE main_chain_index=?`, [mci]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let unit = await storage.readUnit(row.unit);
-		unit.messages.forEach(async m => {
+		for (let m of unit.messages) {
 			if (m.app !== "data_feed")
-				return;
+				continue;
 			for (let key in m.payload) {
 				let contract_hash_matches = key.match(/CONTRACT_(.+)/);
 				if (!contract_hash_matches)
@@ -616,8 +616,8 @@ eventBus.on('mci_became_stable', async mci => {
 				let winner_address = m.payload[key];
 				await contracts.updateField("winner_side", contract_hash, winner_address == contract.side1_address ? 1 : 2);
 			}
-		});
-	});
+		}
+	}
 });
 
 // contract was completed 
@@ -628,12 +628,12 @@ eventBus.on('mci_became_stable', async mci => {
 		JOIN inputs USING(unit)
 		CROSS JOIN arbstore_arbiter_contracts AS arb_c ON inputs.address=arb_c.shared_address
 		WHERE arb_c.status='in_dispute' AND main_chain_index=? `, [mci]);
-	rows.forEach(async row => {
+	for (let row of rows) {
 		let contract = await contracts.get(row.hash);
 		await contracts.updateStatus(contract.hash, "completed");
 		let arbiter = await arbiters.getByAddress(row.arbiter_address);
 		device.sendMessageToDevice(arbiter.device_address, 'text', texts.contract_completed(row.hash, contract.shared_address));
-	});
+	}
 });
 
 // arbiter appeal stats
