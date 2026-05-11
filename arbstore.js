@@ -534,20 +534,21 @@ function extractContractFromUnit(unit) {
 			FROM messages
 			JOIN unit_authors USING(unit)
 			JOIN definitions USING(definition_chash)
-			WHERE unit=? AND payload LIKE '{"contract_text_hash"%"arbiter"%' AND definition LIKE '["or",%'`, [unit]);
+			WHERE unit=? AND app='data' AND payload LIKE '%"contract_text_hash"%' AND definition LIKE '["or",%'`, [unit]);
 		if (rows.length === 0) {
 			return reject("unit either not known to arbstore yet or does not contain any contract info");
 		}
 		if (rows.length > 1)
 			return reject("more than 1 contract message in the unit, can't process");
 		const row = rows[0];
-		let contract_hash = row.payload.match(/"contract_text_hash":"([^"]+)"/);
+		const data = JSON.parse(row.payload);
+		let contract_hash = data.contract_text_hash;
 		if (!contract_hash)
 			return reject("no contract hash in the unit");
-		let arbiter_address = row.payload.match(/"arbiter":"([^"]+)"/);
+		let arbiter_address = data.arbiter;
 		if (!arbiter_address)
 			return reject("no arbiter_address in the unit");
-		let arbiter = await arbiters.getByAddress(arbiter_address[1]);
+		let arbiter = await arbiters.getByAddress(arbiter_address);
 		if (!arbiter)
 			return reject("arbiter is not known to this arbstore");
 		let definitionObj = JSON.parse(row.definition);
@@ -569,7 +570,7 @@ function extractContractFromUnit(unit) {
 		}
 		if (asset && asset[1] === "base")
 			asset[1] = null;
-		await contracts.insertNew(contract_hash[1], row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
+		await contracts.insertNew(contract_hash, row.unit, row.shared_address, arbiter, amount, asset ? asset[1] : null, 'active', side1_address, side2_address);
 		if (arbiter.info.email) {
 			const formatted_amount = amount ? await getFormattedAmount(amount, asset[1]) : 'an unknown amount in a private currency';
 			sendEmail(arbiter.info.email, `New contract on ArbStore`, 'emails/new_contract.html', {
@@ -578,13 +579,13 @@ function extractContractFromUnit(unit) {
 				side1_address,
 				side2_address,
 				shared_address: row.shared_address,
-				contract_hash: contract_hash[1],
+				contract_hash: contract_hash,
 			});
 			console.log(`sent notification about new contract to arbiter email ${arbiter.info.email}`);
 		}
 		else
 			console.log("arbiter email not known");
-		resolve(await contracts.get(contract_hash[1]));
+		resolve(await contracts.get(contract_hash));
 	});
 }
 eventBus.on('saved_unit', objJoint => {
