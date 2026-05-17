@@ -1021,7 +1021,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 		  (request.my_address === contract.side2_address && request.peer_address === contract.side1_address)) ) {
 		return ctx.throw(404, `{"error": "addresses do not match definition"}`);
 	}
-	if (contract.status != "active")
+	if (contract.status != "active" && contract.status != "dispute_requested")
 		return ctx.throw(404, `{"error": "contract was in dispute already"}`);
 	let balances = await contracts.queryBalance(contract.hash);
 	//if (balances[contract.asset] < contract.amount)
