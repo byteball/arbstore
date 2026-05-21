@@ -1017,6 +1017,10 @@ walletApiRouter.post('/dispute/new', async ctx => {
 		if (!contract)
 			return ctx.throw(404, `{"error": "hash not found"}`);
 	}
+	else {
+		if (request.unit !== contract.unit)
+			return ctx.throw(404, `{"error": "unit does not match contract"}`);
+	}
 	if (!((request.my_address === contract.side1_address && request.peer_address === contract.side2_address) ||
 		  (request.my_address === contract.side2_address && request.peer_address === contract.side1_address)) ) {
 		return ctx.throw(404, `{"error": "addresses do not match definition"}`);
