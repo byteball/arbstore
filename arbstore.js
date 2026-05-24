@@ -1039,6 +1039,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 		request.amount = contract.amount;
 		request.asset = contract.asset;
 	}
+	request.shared_address = contract.shared_address;
 	request.arbiter_address = contract.arbiter_address;
 	request.service_fee_asset = conf.asset || "base";
 	await contracts.updateStatus(contract.hash, "dispute_requested");
