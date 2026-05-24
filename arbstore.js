@@ -1128,7 +1128,7 @@ walletApiRouter.all('/get_appeal_fee', async ctx => {
 	ctx.body = JSON.stringify({amount: conf.AppealFeeAmount, asset: conf.asset});
 });
 walletApiRouter.all('/get_info', async ctx => {
-	ctx.body = JSON.stringify({address: arbstoreFirstAddress, cut: conf.ArbStoreCut, terms_url: conf.terms_url});
+	ctx.body = JSON.stringify({address: arbstoreFirstAddress, device_address: device.getMyDeviceAddress(), cut: conf.ArbStoreCut, terms_url: conf.terms_url});
 });
 
 // ArbStore Web JSON API
