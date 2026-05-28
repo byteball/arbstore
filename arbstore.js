@@ -1009,7 +1009,7 @@ walletApiRouter.get('/arbiter/:address', async ctx => {
 
 walletApiRouter.post('/dispute/new', async ctx => {
 	let request = ctx.request.body;
-	if (!request.contract_hash || !request.my_address || !request.peer_address || typeof request.me_is_payer === "undefined" || !request.my_pairing_code || !request.peer_pairing_code || !request.encrypted_contract || !request.unit)
+	if (typeof request.me_is_payer === "undefined" || !request.encrypted_contract || ![request.unit, request.contract_hash, request.my_address, request.peer_address, request.my_pairing_code, request.peer_pairing_code, request.my_contact_info, request.peer_contact_info].every(validationUtils.isNonemptyString))
 		return ctx.throw(404, `{"error": "not all fields present"}`);
 	let contract = await contracts.get(request.contract_hash);
 	if (!contract) { // no sniped contract was created, probably because the arbiter was on another arbstore atm of contract creation
@@ -1030,6 +1030,19 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	let balances = await contracts.queryBalance(contract.hash);
 	//if (balances[contract.asset] < contract.amount)
 	//	return ctx.throw(200, JSON.stringify({error: '{"error": "not enough balance on the contract"}'}));
+	
+	// we authenticate the request by contacts hash -- only the parties know its inputs (or anyone who had contracts with both of them in the past). The downside is that we have to disclose contact_infos to the arbstore
+	const contacts_hash = arbiter_contract.getContactsHash(request);
+	const objUnit = await storage.readUnit(request.unit);
+	if (!objUnit)
+		return ctx.throw(404, `{"error": "unit not found"}`);
+	const dataMessage = objUnit.messages.find(m => m.app === 'data');
+	if (!dataMessage)
+		return ctx.throw(404, `{"error": "no data message in unit"}`);
+	const dataPayload = dataMessage.payload;
+	if (dataPayload.contacts_hash !== contacts_hash)
+		return ctx.throw(404, `{"error": "contacts hash does not match"}`);
+
 	if (!contract.amount && !contract.asset) {
 		if (!request.amount)
 			return ctx.throw(404, `{"error": "contract amount not known"}`);
@@ -1065,7 +1078,7 @@ walletApiRouter.post('/dispute/new', async ctx => {
 
 walletApiRouter.post('/appeal/new', async ctx => {
 	let request = ctx.request.body;
-	if (!request.contract_hash || !request.my_pairing_code || !request.my_address || !request.contract || !request.contract.title || !request.contract.text)
+	if (!validationUtils.isNonemptyObject(request.contract) || ![request.contract_hash, request.my_pairing_code, request.my_address, request.contract.title, request.contract.text].every(validationUtils.isNonemptyString))
 		return ctx.throw(404, `{"error": "not all fields present"}`);
 	let contract = await contracts.get(request.contract_hash);
 	if (!contract) {
@@ -1088,7 +1101,7 @@ walletApiRouter.post('/appeal/new', async ctx => {
 	if (pubkey.length !== 44)
 		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
 
-	if (!request.contract.my_party_name || !request.contract.peer_party_name || !request.contract.arbiter_address || !request.contract.amount)
+	if (!request.contract.amount || ![request.contract.my_party_name, request.contract.peer_party_name, request.contract.arbiter_address].every(validationUtils.isNonemptyString))
 		return ctx.throw(404, `{"error": "not all contract fields present"}`);
 	const hash = arbiter_contract.getHash(request.contract);
 	if (hash !== request.contract_hash)
