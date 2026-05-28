@@ -309,11 +309,12 @@ function onReady() {
 					last_plaintiff_device_address = device_address;
 					device.startWaitingForPairing(function(reversePairingInfo){
 						device.sendPairingMessage(hub, pubkey, pairing_secret, reversePairingInfo.pairing_secret, {
-							ifOk: () => {
-								headlessWallet.issueNextMainAddress(async address => {
-									await contracts.updateField("service_fee_address", contract.hash, address);
-									device.sendMessageToDevice(device_address, 'text', texts.payForArbiterService(current_arbiter.real_name, amount, address, current_arbiter.info.pairing_code, comment));
-								});
+							ifOk: async () => {
+								if (!contract.service_fee_address) {
+									contract.service_fee_address = await headlessWallet.issueNextMainAddress();
+									await contracts.updateField("service_fee_address", contract.hash, contract.service_fee_address);
+								}
+								device.sendMessageToDevice(device_address, 'text', texts.payForArbiterService(current_arbiter.real_name, amount, contract.service_fee_address, current_arbiter.info.pairing_code, comment));
 							},
 							ifError: respond
 						});

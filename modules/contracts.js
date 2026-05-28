@@ -5,7 +5,7 @@ const conf = require('ocore/conf');
 const arbiter_contract = require('ocore/arbiter_contract');
 
 async function get(hash) {
-	let rows = await db.query(`SELECT arbstore_arbiter_contracts.hash, arbstore_arbiter_contracts.unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, contract, side1_address, side2_address, winner_side, plaintiff_side
+	let rows = await db.query(`SELECT arbstore_arbiter_contracts.hash, arbstore_arbiter_contracts.unit, arbiter_address, shared_address, amount, asset, status, status_change_date, plaintiff_pairing_code, peer_pairing_code, service_fee, service_fee_address, contract, side1_address, side2_address, winner_side, plaintiff_side
 		FROM arbstore_arbiter_contracts 
 		WHERE hash=?`, [hash]);
 	var row = rows.length ? rows[0] : null;
