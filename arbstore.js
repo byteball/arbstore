@@ -1012,6 +1012,8 @@ walletApiRouter.post('/dispute/new', async ctx => {
 	let request = ctx.request.body;
 	if (typeof request.me_is_payer === "undefined" || !request.encrypted_contract || ![request.unit, request.contract_hash, request.my_address, request.peer_address, request.my_pairing_code, request.peer_pairing_code, request.my_contact_info, request.peer_contact_info].every(validationUtils.isNonemptyString))
 		return ctx.throw(404, `{"error": "not all fields present"}`);
+	if (![request.my_address, request.peer_address].every(validationUtils.isValidAddress))
+		return ctx.throw(404, `{"error": "invalid address"}`);
 	let contract = await contracts.get(request.contract_hash);
 	if (!contract) { // no sniped contract was created, probably because the arbiter was on another arbstore atm of contract creation
 		contract = await extractContractFromUnit(request.unit).catch((err) => {ctx.throw(404, `{"error": "${err}"}`);});
@@ -1102,8 +1104,10 @@ walletApiRouter.post('/appeal/new', async ctx => {
 	if (pubkey.length !== 44)
 		return ctx.throw(404, `{"error": "invalid pubkey length"}`);
 
-	if (!request.contract.amount || ![request.contract.my_party_name, request.contract.peer_party_name, request.contract.arbiter_address].every(validationUtils.isNonemptyString))
+	if (!request.contract.amount || typeof request.contract.me_is_payer === "undefined" || ![request.contract.my_party_name, request.contract.peer_party_name, request.contract.my_address, request.contract.peer_address, request.contract.arbiter_address, request.contract.creation_date].every(validationUtils.isNonemptyString))
 		return ctx.throw(404, `{"error": "not all contract fields present"}`);
+	if (![request.contract.my_address, request.contract.peer_address, request.contract.arbiter_address].every(validationUtils.isValidAddress))
+		return ctx.throw(404, `{"error": "invalid address"}`);
 	const hash = arbiter_contract.getHash(request.contract);
 	if (hash !== request.contract_hash)
 		return ctx.throw(404, `{"error": "contract text doesn't match the hash"}`);

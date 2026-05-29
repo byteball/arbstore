@@ -11,14 +11,7 @@ async function get(hash) {
 	var row = rows.length ? rows[0] : null;
 	if (row && row.contract) {
 		row.contract = JSON.parse(row.contract);
-		row.is_hash_valid = arbiter_contract.getHash({
-			title: row.contract.title,
-			text: row.contract.text,
-			creation_date: row.contract.creation_date,
-			arbiter_address: row.arbiter_address,
-			amount: row.amount,
-			asset: row.asset
-		}) === row.hash;
+		row.is_hash_valid = arbiter_contract.getHash(row.contract) === row.hash;
 		row.side1_attested = false;
 		row.side2_attested = false;
 		if (conf.trustedAttestorAddresses && conf.trustedAttestorAddresses.length) {
